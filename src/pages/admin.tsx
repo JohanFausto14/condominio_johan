@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { useNavigate } from "react-router-dom";
 import {
   faHome,
   faUser,
@@ -7,9 +8,24 @@ import {
   faGavel,
   faDoorOpen,
   faSignOutAlt,
+  faPen,
 } from "@fortawesome/free-solid-svg-icons";
 
 const Admin: React.FC = () => {
+  const navigate = useNavigate();
+  const [userImage, setUserImage] = useState<string | null>(null);
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setUserImage(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
@@ -17,23 +33,38 @@ const Admin: React.FC = () => {
         <div>
           {/* Navigation */}
           <nav className="mt-10 space-y-4">
-            <button className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left">
+            <button
+              onClick={() => navigate("/admin")}
+              className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
+            >
               <FontAwesomeIcon icon={faHome} className="text-xl mr-4" />
               <span className="text-sm font-medium">Inicio</span>
             </button>
-            <button className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left">
+            <button
+              onClick={() => navigate("/usuarios")}
+              className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
+            >
               <FontAwesomeIcon icon={faUser} className="text-xl mr-4" />
               <span className="text-sm font-medium">Usuarios</span>
             </button>
-            <button className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left">
+            <button
+              onClick={() => navigate("/pagos")}
+              className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
+            >
               <FontAwesomeIcon icon={faDollarSign} className="text-xl mr-4" />
               <span className="text-sm font-medium">Pagos</span>
             </button>
-            <button className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left">
+            <button
+              onClick={() => navigate("/multas")}
+              className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
+            >
               <FontAwesomeIcon icon={faGavel} className="text-xl mr-4" />
               <span className="text-sm font-medium">Multas</span>
             </button>
-            <button className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left">
+            <button
+              onClick={() => navigate("/permisos")}
+              className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
+            >
               <FontAwesomeIcon icon={faDoorOpen} className="text-xl mr-4" />
               <span className="text-sm font-medium">Permisos portones</span>
             </button>
@@ -41,7 +72,10 @@ const Admin: React.FC = () => {
         </div>
 
         {/* Logout */}
-        <button className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left mb-8">
+        <button
+          onClick={() => navigate("/")}
+          className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left mb-8"
+        >
           <FontAwesomeIcon icon={faSignOutAlt} className="text-xl mr-4" />
           <span className="text-sm font-medium">Cerrar sesión</span>
         </button>
@@ -51,23 +85,36 @@ const Admin: React.FC = () => {
       <div className="flex-1 bg-gray-300 relative p-28">
         {/* User Image in Top-Right */}
         <div className="absolute top-4 right-4">
-          <div className="w-12 h-12 bg-gray-500 rounded-full overflow-hidden border-2 border-white shadow-lg">
-            <img
-              src="https://via.placeholder.com/150" // Reemplaza con la URL real de la imagen del usuario
-              alt="User"
-              className="w-full h-full object-cover"
+          <div className="relative w-16 h-16">
+            <div className="w-16 h-16 bg-gray-500 rounded-full overflow-hidden border-2 border-white shadow-lg">
+              <img
+                src={userImage || "https://via.placeholder.com/150"}
+                alt="User"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <label
+              htmlFor="fileInput"
+              className="absolute bottom-0 right-0 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-md cursor-pointer"
+            >
+              <FontAwesomeIcon icon={faPen} className="text-black w-3 h-3" />
+            </label>
+            <input
+              id="fileInput"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageChange}
             />
           </div>
         </div>
 
         {/* Header */}
         <h1 className="text-center text-2xl font-bold mb-12">
-          Haz iniciado sesión como administrador!
+          ¡Haz iniciado sesión como administrador!
         </h1>
 
-        <h1 className="text-center text-2xl font-bold mb-2">
-          Datos del usuario
-        </h1>
+        <h1 className="text-center text-2xl font-bold mb-2">Datos del usuario</h1>
         {/* User Info */}
         <div className="space-y-6 text-center">
           {/* Nombre */}
@@ -80,7 +127,7 @@ const Admin: React.FC = () => {
 
           {/* Teléfono */}
           <div>
-            <span className="block text-black  font-bold mb-1">Teléfono:</span>
+            <span className="block text-black font-bold mb-1">Teléfono:</span>
             <span className="bg-gray-100 px-24 py-2 rounded-3xl shadow-sm text-gray-800">
               3386746221
             </span>
@@ -88,7 +135,7 @@ const Admin: React.FC = () => {
 
           {/* Departamento */}
           <div>
-            <span className="block text-black  font-bold mb-1">Departamento:</span>
+            <span className="block text-black font-bold mb-1">Departamento:</span>
             <span className="bg-gray-100 px-32 py-2 rounded-3xl shadow-sm text-gray-800">
               506
             </span>
@@ -96,7 +143,7 @@ const Admin: React.FC = () => {
 
           {/* Torre */}
           <div>
-            <span className="block text-black  font-bold mb-1">Torre:</span>
+            <span className="block text-black font-bold mb-1">Torre:</span>
             <span className="bg-gray-100 px-28 py-2 rounded-3xl shadow-sm text-gray-800">
               Del Rey
             </span>
