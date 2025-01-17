@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useNavigate } from "react-router-dom";
 import {
@@ -16,6 +16,7 @@ import {
 
 const Pagos: React.FC = () => {
   const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState(""); // Estado para el término de búsqueda
 
   const payments = [
     { id: 1, name: "Ari Johan Alvarado Fausto", role: "Administrador", tower: "Del Rey", department: 506, paid: true },
@@ -26,6 +27,22 @@ const Pagos: React.FC = () => {
     { id: 6, name: "Clara Fernández Ruiz", role: "Dueño", tower: "Del Castillo", department: 516, paid: false },
     { id: 7, name: "Camila Rodríguez Ortega", role: "Inquilino", tower: "Gemela", department: 524, paid: true },
   ];
+
+  // Filtrar los pagos según el término de búsqueda
+  const filteredPayments = payments.filter((payment) => {
+    const lowerSearchTerm = searchTerm.toLowerCase(); // Normalizar el término de búsqueda
+
+    // Coincidencias parciales para "paga" y "no "
+    const isPaidMatch = lowerSearchTerm.includes("paga") && payment.paid; // Buscar "paga" para pagos
+    const isNotPaidMatch = lowerSearchTerm.includes("no ") && !payment.paid; // Buscar "no " para no pagos
+
+    return (
+      payment.id.toString().includes(searchTerm) || // Filtrar por ID
+      payment.name.toLowerCase().includes(lowerSearchTerm) || // Filtrar por Nombre
+      isPaidMatch || // Coincidencia con "paga"
+      isNotPaidMatch // Coincidencia con "no "
+    );
+  });
 
   return (
     <div className="flex h-screen">
@@ -42,10 +59,10 @@ const Pagos: React.FC = () => {
               <FontAwesomeIcon icon={faUser} className="text-xl mr-4" />
               <span className="text-sm font-medium">Usuarios</span>
             </button>
-            <button className="flex items-center px-6 py-3 bg-blue-600 w-full text-left">
-              <FontAwesomeIcon icon={faDollarSign} className="text-xl mr-4" />
-              <span className="text-sm font-medium">Pagos</span>
-            </button>
+            <button onClick={() => navigate("/pagos")} className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left">
+                         <FontAwesomeIcon icon={faDollarSign} className="text-xl mr-4" />
+                         <span className="text-sm font-medium">Pagos</span>
+                       </button>
             <button onClick={() => navigate("/multas")} className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left">
               <FontAwesomeIcon icon={faGavel} className="text-xl mr-4" />
               <span className="text-sm font-medium">Multas</span>
@@ -85,7 +102,9 @@ const Pagos: React.FC = () => {
           <FontAwesomeIcon icon={faSearch} className="text-gray-500 mr-2" />
           <input
             type="text"
-            placeholder="Buscador de usuarios"
+            placeholder="Buscar por ID, nombre o estado (Pagado / No pagado )"
+            value={searchTerm} // Conectar el estado
+            onChange={(e) => setSearchTerm(e.target.value)} // Actualizar el estado
             className="flex-1 bg-transparent focus:outline-none"
           />
         </div>
@@ -105,7 +124,7 @@ const Pagos: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {payments.map((payment) => (
+              {filteredPayments.map((payment) => (
                 <tr key={payment.id} className="hover:bg-gray-100">
                   <td className="border px-4 py-2">{payment.id}</td>
                   <td className="border px-4 py-2">{payment.name}</td>
@@ -114,9 +133,13 @@ const Pagos: React.FC = () => {
                   <td className="border px-4 py-2">{payment.department}</td>
                   <td className="border px-4 py-2 text-center">
                     {payment.paid ? (
-                      <span className="text-green-500 font-bold">✔</span>
+                      <span className="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                        Pagado
+                      </span>
                     ) : (
-                      <span className="text-red-500 font-bold">✘</span>
+                      <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                        No Pagado
+                      </span>
                     )}
                   </td>
                   <td className="border px-4 py-2 text-center">

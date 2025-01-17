@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useNavigate } from "react-router-dom";
 import {
@@ -16,6 +16,7 @@ import {
 
 const Multas: React.FC = () => {
   const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState(""); // Estado para el término de búsqueda
 
   const fines = [
     { id: 1, name: "Ari Johan Alvarado Fausto", role: "Administrador", tower: "Del Rey", department: 506, fine: "$0" },
@@ -26,6 +27,15 @@ const Multas: React.FC = () => {
     { id: 6, name: "Clara Fernández Ruiz", role: "Dueño", tower: "Del Castillo", department: 516, fine: "$1250" },
     { id: 7, name: "Camila Rodríguez Ortega", role: "Inquilino", tower: "Gemela", department: 524, fine: "$0" },
   ];
+
+  // Filtrar multas según el término de búsqueda
+  const filteredFines = fines.filter((fine) => {
+    const lowerSearchTerm = searchTerm.toLowerCase();
+    return (
+      fine.id.toString().includes(searchTerm) || // Filtrar por ID
+      fine.name.toLowerCase().includes(lowerSearchTerm) // Filtrar por Nombre
+    );
+  });
 
   return (
     <div className="flex h-screen">
@@ -85,7 +95,9 @@ const Multas: React.FC = () => {
           <FontAwesomeIcon icon={faSearch} className="text-gray-500 mr-2" />
           <input
             type="text"
-            placeholder="Buscador de usuarios"
+            placeholder="Buscar por ID o nombre"
+            value={searchTerm} // Conectar el estado
+            onChange={(e) => setSearchTerm(e.target.value)} // Actualizar el estado
             className="flex-1 bg-transparent focus:outline-none"
           />
         </div>
@@ -105,7 +117,7 @@ const Multas: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {fines.map((fine) => (
+              {filteredFines.map((fine) => (
                 <tr key={fine.id} className="hover:bg-gray-100">
                   <td className="border px-4 py-2">{fine.id}</td>
                   <td className="border px-4 py-2">{fine.name}</td>

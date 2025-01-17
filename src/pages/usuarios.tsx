@@ -83,10 +83,10 @@ const Usuarios: React.FC = () => {
                     <FontAwesomeIcon icon={faUser} className="text-xl mr-4" />
                     <span className="text-sm font-medium">Usuarios</span>
                   </button>
-                  <button className="flex items-center px-6 py-3 bg-blue-600 w-full text-left">
-                    <FontAwesomeIcon icon={faDollarSign} className="text-xl mr-4" />
-                    <span className="text-sm font-medium">Pagos</span>
-                  </button>
+                  <button onClick={() => navigate("/pagos")} className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left">
+                               <FontAwesomeIcon icon={faDollarSign} className="text-xl mr-4" />
+                               <span className="text-sm font-medium">Pagos</span>
+                             </button>
                   <button onClick={() => navigate("/multas")} className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left">
                     <FontAwesomeIcon icon={faGavel} className="text-xl mr-4" />
                     <span className="text-sm font-medium">Multas</span>
@@ -114,7 +114,7 @@ const Usuarios: React.FC = () => {
           <FontAwesomeIcon icon={faSearch} className="text-gray-500 mr-2" />
           <input
             type="text"
-            placeholder="Buscador de usuarios"
+            placeholder="Buscar por ID o nombre"
             className="flex-1 bg-transparent focus:outline-none"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
