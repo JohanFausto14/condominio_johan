@@ -12,11 +12,20 @@ import {
   faPen,
   faTrash,
   faFileAlt,
+  faPlus,
 } from "@fortawesome/free-solid-svg-icons";
 
 const Multas: React.FC = () => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState(""); // Estado para el término de búsqueda
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar el modal
+  const [newFine, setNewFine] = useState({
+    name: "",
+    role: "",
+    tower: "",
+    department: "",
+    fine: "",
+  });
 
   const fines = [
     { id: 1, name: "Ari Johan Alvarado Fausto", role: "Administrador", tower: "Del Rey", department: 506, fine: "$0" },
@@ -28,14 +37,19 @@ const Multas: React.FC = () => {
     { id: 7, name: "Camila Rodríguez Ortega", role: "Inquilino", tower: "Gemela", department: 524, fine: "$0" },
   ];
 
-  // Filtrar multas según el término de búsqueda
   const filteredFines = fines.filter((fine) => {
     const lowerSearchTerm = searchTerm.toLowerCase();
     return (
-      fine.id.toString().includes(searchTerm) || // Filtrar por ID
-      fine.name.toLowerCase().includes(lowerSearchTerm) // Filtrar por Nombre
+      fine.id.toString().includes(searchTerm) || 
+      fine.name.toLowerCase().includes(lowerSearchTerm)
     );
   });
+
+  const handleModalSubmit = () => {
+    console.log("Nueva multa registrada:", newFine);
+    setIsModalOpen(false);
+    setNewFine({ name: "", role: "", tower: "", department: "", fine: "" });
+  };
 
   return (
     <div className="flex h-screen">
@@ -66,8 +80,6 @@ const Multas: React.FC = () => {
             </button>
           </nav>
         </div>
-
-        {/* Logout */}
         <button onClick={() => navigate("/")} className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left mb-8">
           <FontAwesomeIcon icon={faSignOutAlt} className="text-xl mr-4" />
           <span className="text-sm font-medium">Cerrar sesión</span>
@@ -76,33 +88,25 @@ const Multas: React.FC = () => {
 
       {/* Main Content */}
       <div className="flex-1 bg-gray-300 relative p-10">
-        {/* User Image in Top-Right */}
         <div className="absolute top-4 right-4">
           <div className="w-12 h-12 bg-gray-500 rounded-full overflow-hidden border-2 border-white shadow-lg">
-            <img
-              src="https://via.placeholder.com/150"
-              alt="User"
-              className="w-full h-full object-cover"
-            />
+            <img src="https://via.placeholder.com/150" alt="User" className="w-full h-full object-cover" />
           </div>
         </div>
 
-        {/* Header */}
         <h1 className="text-center text-2xl font-bold mb-6">Multas</h1>
 
-        {/* Search Bar */}
         <div className="flex items-center bg-white rounded-full shadow-md px-4 py-2 mb-6">
           <FontAwesomeIcon icon={faSearch} className="text-gray-500 mr-2" />
           <input
             type="text"
             placeholder="Buscar por ID o nombre"
-            value={searchTerm} // Conectar el estado
-            onChange={(e) => setSearchTerm(e.target.value)} // Actualizar el estado
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-1 bg-transparent focus:outline-none"
           />
         </div>
 
-        {/* Fines Table */}
         <div className="overflow-x-auto">
           <table className="table-auto w-full text-left bg-white rounded-lg shadow-md">
             <thead>
@@ -142,12 +146,73 @@ const Multas: React.FC = () => {
           </table>
         </div>
 
-        {/* Add Fine Button */}
         <div className="flex justify-center mt-6">
-          <button className="bg-white text-gray-800 px-6 py-2 rounded-full shadow-md hover:bg-gray-100">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-white text-gray-800 px-6 py-2 rounded-full shadow-md hover:bg-gray-100"
+          >
+            <FontAwesomeIcon icon={faPlus} className="mr-2" />
             Añadir multa
           </button>
         </div>
+
+        {/* Modal */}
+        {isModalOpen && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+              <h2 className="text-xl font-bold mb-4">Registrar Multa</h2>
+              <input
+                type="text"
+                placeholder="Nombre completo"
+                value={newFine.name}
+                onChange={(e) => setNewFine({ ...newFine, name: e.target.value })}
+                className="w-full p-2 mb-4 border rounded"
+              />
+              <input
+                type="text"
+                placeholder="Rol del usuario"
+                value={newFine.role}
+                onChange={(e) => setNewFine({ ...newFine, role: e.target.value })}
+                className="w-full p-2 mb-4 border rounded"
+              />
+              <input
+                type="text"
+                placeholder="Torre"
+                value={newFine.tower}
+                onChange={(e) => setNewFine({ ...newFine, tower: e.target.value })}
+                className="w-full p-2 mb-4 border rounded"
+              />
+              <input
+                type="number"
+                placeholder="Departamento"
+                value={newFine.department}
+                onChange={(e) => setNewFine({ ...newFine, department: e.target.value })}
+                className="w-full p-2 mb-4 border rounded"
+              />
+              <input
+                type="text"
+                placeholder="Multa ($)"
+                value={newFine.fine}
+                onChange={(e) => setNewFine({ ...newFine, fine: e.target.value })}
+                className="w-full p-2 mb-4 border rounded"
+              />
+              <div className="flex justify-end space-x-2">
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleModalSubmit}
+                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                >
+                  Guardar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

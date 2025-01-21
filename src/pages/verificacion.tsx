@@ -12,7 +12,7 @@ const Verificacion: React.FC = () => {
     };
 
   return (
-    <div className="flex justify-center items-center h-screen bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/src/assets/Fondo.jpg')" }}>
+    <div className="flex justify-center items-center h-screen bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/assets/Fondo.jpg')" }}>
       <div
         className="p-8 rounded-lg shadow-lg w-[450px] min-h-[500px] flex flex-col justify-center"
         style={{
