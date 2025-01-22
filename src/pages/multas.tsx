@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useNavigate } from "react-router-dom";
 import {
@@ -15,40 +15,77 @@ import {
   faPlus,
 } from "@fortawesome/free-solid-svg-icons";
 
+// Componente Multas
 const Multas: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false); // Estado para controlar el modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [newFine, setNewFine] = useState({
-    name: "",
-    role: "",
-    tower: "",
-    department: "",
-    fine: "",
+    usuario: "",
+    nombreCompleto: "",
+    departamento: "",
+    torre: "",
+    multa: "",
   });
+  const [fines, setFines] = useState<any[]>([]);
 
-  const fines = [
-    { id: 1, name: "Ari Johan Alvarado Fausto", role: "Administrador", tower: "Del Rey", department: 506, fine: "$0" },
-    { id: 2, name: "Vania Abril Alvarado Fausto", role: "Inquilino", tower: "Alta", department: 518, fine: "$0" },
-    { id: 3, name: "Valeria Gómez Torres", role: "Dueño", tower: "Baja", department: 507, fine: "$750" },
-    { id: 4, name: "Diego Ramírez Pérez", role: "Inquilino", tower: "Fina", department: 514, fine: "$0" },
-    { id: 5, name: "Lucas Martínez Rivera", role: "Inquilino", tower: "Country", department: 501, fine: "$1700" },
-    { id: 6, name: "Clara Fernández Ruiz", role: "Dueño", tower: "Del Castillo", department: 516, fine: "$1250" },
-    { id: 7, name: "Camila Rodríguez Ortega", role: "Inquilino", tower: "Gemela", department: 524, fine: "$0" },
-  ];
+  // Obtener multas del backend
+  useEffect(() => {
+    const fetchFines = async () => {
+      try {
+        const response = await fetch("http://localhost:4000/api/obtener_multas");
+        const data = await response.json();
+        setFines(data);
+      } catch (error) {
+        console.error("Error al obtener las multas:", error);
+      }
+    };
+
+    fetchFines();
+  }, []);
 
   const filteredFines = fines.filter((fine) => {
     const lowerSearchTerm = searchTerm.toLowerCase();
     return (
-      fine.id.toString().includes(searchTerm) || 
-      fine.name.toLowerCase().includes(lowerSearchTerm)
+      fine.id.toString().includes(searchTerm) ||
+      fine.nombreCompleto.toLowerCase().includes(lowerSearchTerm)
     );
   });
 
-  const handleModalSubmit = () => {
-    console.log("Nueva multa registrada:", newFine);
-    setIsModalOpen(false);
-    setNewFine({ name: "", role: "", tower: "", department: "", fine: "" });
+  const handleModalSubmit = async () => {
+    try {
+      const response = await fetch("http://localhost:4000/api/insertar_multas", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newFine),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        console.log("Nueva multa registrada:", data);
+        
+        // Refrescar la lista de multas tras agregar una nueva
+        const fetchFines = async () => {
+          try {
+            const response = await fetch("http://localhost:4000/api/obtener_multas");
+            const data = await response.json();
+            setFines(data); // Actualiza las multas sin necesidad de recargar la página
+          } catch (error) {
+            console.error("Error al obtener las multas:", error);
+          }
+        };
+        fetchFines();
+
+        setIsModalOpen(false);
+        setNewFine({ usuario: "", nombreCompleto: "", departamento: "", torre: "", multa: "" });
+      } else {
+        alert(data.message || "Hubo un error al registrar la multa");
+      }
+    } catch (error) {
+      console.error("Error al registrar la multa:", error);
+    }
   };
 
   return (
@@ -124,11 +161,11 @@ const Multas: React.FC = () => {
               {filteredFines.map((fine) => (
                 <tr key={fine.id} className="hover:bg-gray-100">
                   <td className="border px-4 py-2">{fine.id}</td>
-                  <td className="border px-4 py-2">{fine.name}</td>
-                  <td className="border px-4 py-2">{fine.role}</td>
-                  <td className="border px-4 py-2">{fine.tower}</td>
-                  <td className="border px-4 py-2">{fine.department}</td>
-                  <td className="border px-4 py-2">{fine.fine}</td>
+                  <td className="border px-4 py-2">{fine.nombreCompleto}</td>
+                  <td className="border px-4 py-2">{fine.usuario}</td>
+                  <td className="border px-4 py-2">{fine.torre}</td>
+                  <td className="border px-4 py-2">{fine.departamento}</td>
+                  <td className="border px-4 py-2">{fine.multa}</td>
                   <td className="border px-4 py-2 text-center">
                     <button className="text-blue-500 mr-2 hover:text-blue-700">
                       <FontAwesomeIcon icon={faPen} />
@@ -164,36 +201,36 @@ const Multas: React.FC = () => {
               <input
                 type="text"
                 placeholder="Nombre completo"
-                value={newFine.name}
-                onChange={(e) => setNewFine({ ...newFine, name: e.target.value })}
+                value={newFine.nombreCompleto}
+                onChange={(e) => setNewFine({ ...newFine, nombreCompleto: e.target.value })}
                 className="w-full p-2 mb-4 border rounded"
               />
               <input
                 type="text"
                 placeholder="Rol del usuario"
-                value={newFine.role}
-                onChange={(e) => setNewFine({ ...newFine, role: e.target.value })}
+                value={newFine.usuario}
+                onChange={(e) => setNewFine({ ...newFine, usuario: e.target.value })}
                 className="w-full p-2 mb-4 border rounded"
               />
               <input
                 type="text"
                 placeholder="Torre"
-                value={newFine.tower}
-                onChange={(e) => setNewFine({ ...newFine, tower: e.target.value })}
+                value={newFine.torre}
+                onChange={(e) => setNewFine({ ...newFine, torre: e.target.value })}
                 className="w-full p-2 mb-4 border rounded"
               />
               <input
                 type="number"
                 placeholder="Departamento"
-                value={newFine.department}
-                onChange={(e) => setNewFine({ ...newFine, department: e.target.value })}
+                value={newFine.departamento}
+                onChange={(e) => setNewFine({ ...newFine, departamento: e.target.value })}
                 className="w-full p-2 mb-4 border rounded"
               />
               <input
                 type="text"
                 placeholder="Multa ($)"
-                value={newFine.fine}
-                onChange={(e) => setNewFine({ ...newFine, fine: e.target.value })}
+                value={newFine.multa}
+                onChange={(e) => setNewFine({ ...newFine, multa: e.target.value })}
                 className="w-full p-2 mb-4 border rounded"
               />
               <div className="flex justify-end space-x-2">
