@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "start": "react-scripts start",
+    "start": "vite preview",
     "preview": "vite preview"
   },
   "dependencies": {
