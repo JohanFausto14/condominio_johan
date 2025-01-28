@@ -30,17 +30,17 @@ const PermisosPortones: React.FC = () => {
               <FontAwesomeIcon icon={faUser} className="text-xl mr-4" />
               <span className="text-sm font-medium">Usuarios</span>
             </button>
-            <button onClick={() => navigate("/pagos")} className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left">
+            <button onClick={() => navigate("/Admin/pagos_ad")} className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left">
               <FontAwesomeIcon icon={faDollarSign} className="text-xl mr-4" />
               <span className="text-sm font-medium">Pagos</span>
             </button>
-            <button onClick={() => navigate("/multas")} className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left">
+            <button onClick={() => navigate("/Admin/multas_ad")} className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left">
               <FontAwesomeIcon icon={faGavel} className="text-xl mr-4" />
               <span className="text-sm font-medium">Multas</span>
             </button>
-            <button className="flex items-center px-6 py-3 bg-blue-600 w-full text-left">
+            <button onClick={() => navigate("/Admin/permisos_ad")} className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left">
               <FontAwesomeIcon icon={faDoorOpen} className="text-xl mr-4" />
-              <span className="text-sm font-medium">Permiso de portones</span>
+              <span className="text-sm font-medium">Permisos portones</span>
             </button>
           </nav>
         </div>

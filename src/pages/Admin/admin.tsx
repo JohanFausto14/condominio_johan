@@ -48,21 +48,21 @@ const Admin: React.FC = () => {
               <span className="text-sm font-medium">Usuarios</span>
             </button>
             <button
-              onClick={() => navigate("/pagos")}
+              onClick={() => navigate("/Admin/pagos_ad")}
               className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
             >
               <FontAwesomeIcon icon={faDollarSign} className="text-xl mr-4" />
               <span className="text-sm font-medium">Pagos</span>
             </button>
             <button
-              onClick={() => navigate("/multas")}
+              onClick={() => navigate("/Admin/multas_ad")}
               className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
             >
               <FontAwesomeIcon icon={faGavel} className="text-xl mr-4" />
               <span className="text-sm font-medium">Multas</span>
             </button>
             <button
-              onClick={() => navigate("/permisos")}
+              onClick={() => navigate("/Admin/permisos_ad")}
               className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
             >
               <FontAwesomeIcon icon={faDoorOpen} className="text-xl mr-4" />

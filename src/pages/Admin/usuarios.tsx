@@ -13,20 +13,12 @@ import {
   faTimes,
 } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const Usuarios: React.FC = () => {
   const navigate = useNavigate();
 
-  const [users, setUsers] = useState([
-    { id: 1, name: "Ari Johan Alvarado Fausto", phone: "3386746221", role: "Administrador", tower: "Del Rey", department: 506 },
-    { id: 2, name: "Vania Abril Alvarado Fausto", phone: "3346746254", role: "Inquilino", tower: "Alta", department: 518 },
-    { id: 3, name: "Valeria Gómez Torres", phone: "3377357935", role: "Dueño", tower: "Baja", department: 507 },
-    { id: 4, name: "Diego Ramírez Pérez", phone: "3343321179", role: "Inquilino", tower: "Fina", department: 514 },
-    { id: 5, name: "Lucas Martínez Rivera", phone: "3388420225", role: "Inquilino", tower: "Country", department: 501 },
-    { id: 6, name: "Clara Fernández Ruiz", phone: "3375460528", role: "Dueño", tower: "Del Castillo", department: 516 },
-    { id: 7, name: "Camila Rodríguez Ortega", phone: "3327473379", role: "Inquilino", tower: "Gemela", department: 524 },
-  ]);
-
+  const [users, setUsers] = useState<any[]>([]); // Lista de usuarios obtenida del backend
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newUser, setNewUser] = useState({
@@ -36,72 +28,118 @@ const Usuarios: React.FC = () => {
     phone: "",
     department: "",
     tower: "",
-    password: "",
     role: "",
   });
 
   const filteredUsers = users.filter(
     (user) =>
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.id.toString().includes(searchQuery)
+      user.id?.toString().includes(searchQuery)
   );
 
-  const handleAddUser = () => {
-    const newUserEntry = {
-      id: users.length + 1,
-      name: `${newUser.name} ${newUser.lastName} ${newUser.middleName}`,
-      phone: newUser.phone,
-      role: newUser.role,
-      tower: newUser.tower,
-      department: Number(newUser.department),
+  // Obtener usuarios al cargar el componente
+  React.useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get("https://api-celeste.onrender.com/api/obtener_usuarios");
+        setUsers(response.data.users);
+      } catch (error) {
+        console.error("Error al obtener usuarios:", error);
+      }
     };
-    setUsers([...users, newUserEntry]);
-    setIsModalOpen(false);
-    setNewUser({
-      name: "",
-      lastName: "",
-      middleName: "",
-      phone: "",
-      department: "",
-      tower: "",
-      password: "",
-      role: "",
-    });
+    
+    fetchUsers();
+  }, []);
+
+  // Registrar nuevo usuario
+  const handleAddUser = async () => {
+    const newUserEntry = {
+      name: newUser.name,
+      lastName: newUser.lastName,
+      middleName: newUser.middleName,
+      phone: newUser.phone,
+      department: Number(newUser.department),
+      tower: newUser.tower,
+      role: newUser.role,
+    };
+  
+    try {
+      const response = await axios.post("https://api-celeste.onrender.com/api/insertar_usuario", newUserEntry);
+      setUsers([...users, response.data.user]); // Actualizar lista de usuarios
+      setIsModalOpen(false);
+      setNewUser({
+        name: "",
+        lastName: "",
+        middleName: "",
+        phone: "",
+        department: "",
+        tower: "",
+        role: "",
+      });
+    } catch (error) {
+      // Verifica si es un error de Axios
+      if (axios.isAxiosError(error)) {
+        console.error("Error al registrar el usuario:", error.response?.data || error.message);
+      } else {
+        // Otro tipo de error
+        console.error("Error inesperado:", error);
+      }
+    }
   };
+  
+  
 
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
       <div className="bg-[#2F68A1] text-white w-64 flex flex-col justify-between">
         <div>
-       <nav className="mt-10 space-y-4">
-                  <button onClick={() => navigate("/admin")} className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left">
-                    <FontAwesomeIcon icon={faHome} className="text-xl mr-4" />
-                    <span className="text-sm font-medium">Inicio</span>
-                  </button>
-                  <button onClick={() => navigate("/usuarios")} className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left">
-                    <FontAwesomeIcon icon={faUser} className="text-xl mr-4" />
-                    <span className="text-sm font-medium">Usuarios</span>
-                  </button>
-                  <button onClick={() => navigate("/pagos")} className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left">
-                               <FontAwesomeIcon icon={faDollarSign} className="text-xl mr-4" />
-                               <span className="text-sm font-medium">Pagos</span>
-                             </button>
-                  <button onClick={() => navigate("/multas")} className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left">
-                    <FontAwesomeIcon icon={faGavel} className="text-xl mr-4" />
-                    <span className="text-sm font-medium">Multas</span>
-                  </button>
-                  <button onClick={() => navigate("/permisos")} className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left">
-                    <FontAwesomeIcon icon={faDoorOpen} className="text-xl mr-4" />
-                    <span className="text-sm font-medium">Permisos portones</span>
-                  </button>
-                </nav>
+          <nav className="mt-10 space-y-4">
+            <button
+              onClick={() => navigate("/admin")}
+              className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
+            >
+              <FontAwesomeIcon icon={faHome} className="text-xl mr-4" />
+              <span className="text-sm font-medium">Inicio</span>
+            </button>
+            <button
+              onClick={() => navigate("/usuarios")}
+              className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
+            >
+              <FontAwesomeIcon icon={faUser} className="text-xl mr-4" />
+              <span className="text-sm font-medium">Usuarios</span>
+            </button>
+            <button
+              onClick={() => navigate("/Admin/pagos_ad")}
+              className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
+            >
+              <FontAwesomeIcon icon={faDollarSign} className="text-xl mr-4" />
+              <span className="text-sm font-medium">Pagos</span>
+            </button>
+            <button
+              onClick={() => navigate("/Admin/multas_ad")}
+              className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
+            >
+              <FontAwesomeIcon icon={faGavel} className="text-xl mr-4" />
+              <span className="text-sm font-medium">Multas</span>
+            </button>
+            <button
+              onClick={() => navigate("/Admin/permisos_ad")}
+              className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
+            >
+              <FontAwesomeIcon icon={faDoorOpen} className="text-xl mr-4" />
+              <span className="text-sm font-medium">Permisos portones</span>
+            </button>
+          </nav>
         </div>
         <div className="mb-10">
-          <button className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left">
-            <FontAwesomeIcon icon={faSignOutAlt} className="text-xl mr-4" />
-            <span className="text-sm font-medium">Cerrar sesión</span>
-          </button>
+          <button
+                   onClick={() => navigate("/")}
+                   className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left mb-8"
+                 >
+                   <FontAwesomeIcon icon={faSignOutAlt} className="text-xl mr-4" />
+                   <span className="text-sm font-medium">Cerrar sesión</span>
+                 </button>
         </div>
       </div>
 
@@ -137,8 +175,8 @@ const Usuarios: React.FC = () => {
             </thead>
             <tbody>
               {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-100">
-                  <td className="border px-4 py-2">{user.id}</td>
+                <tr key={user._id} className="hover:bg-gray-100">
+                  <td className="border px-4 py-2">{user._id}</td>
                   <td className="border px-4 py-2">{user.name}</td>
                   <td className="border px-4 py-2">{user.phone}</td>
                   <td className="border px-4 py-2">{user.role}</td>
@@ -189,21 +227,7 @@ const Usuarios: React.FC = () => {
                 />
                 <input
                   type="text"
-                  placeholder="Apellido paterno"
-                  value={newUser.lastName}
-                  onChange={(e) => setNewUser({ ...newUser, lastName: e.target.value })}
-                  className="w-full border rounded-lg px-4 py-2"
-                />
-                <input
-                  type="text"
-                  placeholder="Apellido materno"
-                  value={newUser.middleName}
-                  onChange={(e) => setNewUser({ ...newUser, middleName: e.target.value })}
-                  className="w-full border rounded-lg px-4 py-2"
-                />
-                <input
-                  type="text"
-                  placeholder="Teléfono"
+                  placeholder="Celular"
                   value={newUser.phone}
                   onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
                   className="w-full border rounded-lg px-4 py-2"
@@ -222,49 +246,23 @@ const Usuarios: React.FC = () => {
                   onChange={(e) => setNewUser({ ...newUser, tower: e.target.value })}
                   className="w-full border rounded-lg px-4 py-2"
                 />
-                <input
-                  type="password"
-                  placeholder="Contraseña"
-                  value={newUser.password}
-                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                <select
+                  value={newUser.role}
+                  onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
                   className="w-full border rounded-lg px-4 py-2"
-                />
-                <div className="flex items-center space-x-4">
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      name="role"
-                      value="Inquilino"
-                      onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-                    />
-                    <span>Inquilino</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      name="role"
-                      value="Dueño"
-                      onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-                    />
-                    <span>Dueño</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      name="role"
-                      value="Administrador"
-                      onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
-                    />
-                    <span>Administrador</span>
-                  </label>
-                </div>
+                >
+                  <option value="">Seleccionar rol</option>
+                  <option value="Inquilino">Inquilino</option>
+                  <option value="Dueño">Dueño</option>
+                  <option value="Administrador">Administrador</option>
+                </select>
               </div>
-              <div className="flex justify-end mt-4">
+              <div className="mt-6 flex justify-end">
                 <button
                   onClick={handleAddUser}
-                  className="bg-blue-500 text-white px-6 py-2 rounded-full shadow-md hover:bg-blue-600"
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
                 >
-                  Registrar
+                  Guardar
                 </button>
               </div>
             </div>
