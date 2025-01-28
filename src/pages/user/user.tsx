@@ -43,7 +43,7 @@ const User: React.FC = () => {
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 10000); // Consultar cada 10 segundos
+    const interval = setInterval(fetchNotifications, 1000); // Consultar cada 10 segundos
     return () => clearInterval(interval); // Limpiar el intervalo al desmontar
   }, []);
 
