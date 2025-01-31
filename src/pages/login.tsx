@@ -1,34 +1,26 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast, ToastContainer } from "react-toastify"; // Importar desde react-toastify
-import "react-toastify/dist/ReactToastify.css"; // Importar los estilos
-import fondoImage from "../../assets/Fondo.jpg"; // Asegúrate de tener esta imagen
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import fondoImage from "../../assets/Fondo.jpg";
 
-// Función que se encargará de verificar el teléfono (al backend)
-const loginUser = async (phone: string) => {
+// Función que se encargará de verificar el teléfono y la contraseña (al backend)
+const loginUser = async (phone: string, password: string) => {
   try {
-    const response = await fetch('https://api-celeste.onrender.com/api/verificarTelefono', {
+    const response = await fetch('https://api-celeste.onrender.com/api/login', { // Cambia la URL a localhost
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ phone }),
+      body: JSON.stringify({ phone, password }),
     });
 
     if (!response.ok) {
-      throw new Error("Error al verificar el teléfono.");
+      throw new Error("Error al verificar el teléfono y la contraseña.");
     }
 
     const data = await response.json();
-
-    if (data.message === "Usuario es Administrador") {
-      // Retornar los datos del usuario si es administrador
-      return { name: data.userData.name, profile: "admin", department: data.userData.department };
-    } else {
-      // Retornar los datos del usuario si no es administrador
-      return { name: data.userData.name, profile: "user", department: data.userData.department };
-    }
-
+    return data.userData; // Retornar los datos del usuario
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : "Error desconocido");
   }
@@ -37,38 +29,63 @@ const loginUser = async (phone: string) => {
 const Login: React.FC = () => {
   const navigate = useNavigate();
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [password, setPassword] = useState("");
+
+  // Función para manejar cambios en el campo de teléfono
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+
+    // Validar que solo se ingresen números y limitar a 10 dígitos
+    if (/^\d*$/.test(inputValue) && inputValue.length <= 10) {
+      setPhoneNumber(inputValue);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    try {
-      // Llamar a la función loginUser que verifica el número en el backend
-      const { name, profile, department } = await loginUser(phoneNumber);
+    // Validar que el número de teléfono tenga exactamente 10 dígitos
+    if (phoneNumber.length !== 10) {
+      toast.error("El número de teléfono debe tener exactamente 10 dígitos.", {
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
+      return;
+    }
 
-      console.log("Datos recibidos de la API:", { name, profile, department });
+    try {
+      // Llamar a la función loginUser que verifica el número y la contraseña en el backend
+      const userData = await loginUser(phoneNumber, password);
+
+      console.log("Datos recibidos de la API:", userData);
 
       // Guardar los datos del usuario en localStorage
-      localStorage.setItem("userName", name);
-      localStorage.setItem("userProfile", profile);
-      localStorage.setItem("userDepartment", department);
+      localStorage.setItem("userName", userData.name);
+      localStorage.setItem("userProfile", userData.role);
+      localStorage.setItem("userDepartment", userData.department);
 
-      // Alerta de éxito: el número se verificó correctamente
-      toast.success("Número verificado correctamente. Redirigiendo...", {
-        position: "top-center", // Posición de la notificación
-        autoClose: 2000, // Duración de la notificación
-        hideProgressBar: true, // Ocultar la barra de progreso
-        closeOnClick: true, // Cerrar al hacer click
-        pauseOnHover: true, // Pausar cuando el mouse pasa sobre ella
-        draggable: true, // Hacerla arrastrable
-        progress: undefined, // No mostrar el progreso
+      // Alerta de éxito: el usuario se autenticó correctamente
+      toast.success("Autenticación exitosa. Redirigiendo...", {
+        position: "top-center",
+        autoClose: 2000,
+        hideProgressBar: true,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
       });
 
       // Redirigir al dashboard según el perfil
       setTimeout(() => {
-        if (profile === "admin") {
-          navigate("/admin"); // Redirigir al admin
+        if (userData.role === "Administrador") {
+          navigate("/admin");
         } else {
-          navigate("/user"); // Redirigir al usuario normal
+          navigate("/user");
         }
       }, 2000);
     } catch (error) {
@@ -81,13 +98,6 @@ const Login: React.FC = () => {
         draggable: true,
         progress: undefined,
       });
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (/^\d*$/.test(value)) {
-      setPhoneNumber(value); // Solo aceptar números
     }
   };
 
@@ -126,17 +136,28 @@ const Login: React.FC = () => {
               id="phone"
               placeholder="Ingresa tu número de teléfono"
               className="w-full px-4 py-2 border rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-              onChange={handleInputChange}
+              onChange={handlePhoneChange} // Usar la función personalizada
               value={phoneNumber}
-              onKeyPress={(e) => {
-                if (!/[0-9]/.test(e.key)) {
-                  e.preventDefault();
-                }
-              }}
+              maxLength={10} // Limitar a 10 caracteres
+              required
+            />
+          </div>
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-white mb-1">
+              Contraseña
+            </label>
+            <input
+              type="password"
+              id="password"
+              placeholder="Ingresa tu contraseña"
+              className="w-full px-4 py-2 border rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+              onChange={(e) => setPassword(e.target.value)}
+              value={password}
+              required
             />
           </div>
           <p className="text-sm text-white">
-            Ingresa tu número de teléfono para recibir un código de verificación por SMS.
+            Ingresa tu número de teléfono y contraseña para iniciar sesión.
           </p>
           <div className="flex justify-center">
             <button

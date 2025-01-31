@@ -8,27 +8,16 @@ import {
   faDoorOpen,
   faSignOutAlt,
   faSearch,
-  faPen,
-  faTrash,
-  faFileAlt,
-  faPlus,
+  faBell,
 } from "@fortawesome/free-solid-svg-icons";
 
-// Componente Multas
 const Multas: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newFine, setNewFine] = useState({
-    usuario: "",
-    nombreCompleto: "",
-    departamento: "",
-    torre: "",
-    multa: "",
-  });
   const [fines, setFines] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
 
-  // Obtener multas del backend
   useEffect(() => {
     const fetchFines = async () => {
       try {
@@ -43,6 +32,55 @@ const Multas: React.FC = () => {
     fetchFines();
   }, []);
 
+  // Función para obtener notificaciones
+  const fetchNotifications = async () => {
+    try {
+      const department = localStorage.getItem("userDepartment");
+      if (!department) {
+        throw new Error("No se encontró el departamento");
+      }
+
+      const response = await fetch(
+        `https://api-celeste.onrender.com/api/notificaciones?department=${department}`
+      );
+
+      if (!response.ok) {
+        throw new Error("Error al obtener notificaciones");
+      }
+
+      const data = await response.json();
+      setNotifications(data);
+    } catch (error) {
+      console.error("Error al obtener las notificaciones:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Función para eliminar una notificación
+  const handleDeleteNotification = async (notificationId: string) => {
+    try {
+      const response = await fetch(
+        `https://api-celeste.onrender.com/api/notificaciones/${notificationId}`,
+        { method: "DELETE" }
+      );
+
+      if (!response.ok) {
+        throw new Error("Error al eliminar la notificación");
+      }
+
+      setNotifications((prevNotifications) =>
+        prevNotifications.filter((notif) => notif._id !== notificationId)
+      );
+    } catch (error) {
+      console.error("Error al eliminar la notificación:", error);
+    }
+  };
+
   const filteredFines = fines.filter((fine) => {
     const lowerSearchTerm = searchTerm.toLowerCase();
     return (
@@ -51,48 +89,11 @@ const Multas: React.FC = () => {
     );
   });
 
-  const handleModalSubmit = async () => {
-    try {
-      const response = await fetch("https://api-celeste.onrender.com/api/insertar_multas", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newFine),
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        console.log("Nueva multa registrada:", data);
-        
-        // Refrescar la lista de multas tras agregar una nueva
-        const fetchFines = async () => {
-          try {
-            const response = await fetch("https://api-celeste.onrender.com/api/obtener_multas");
-            const data = await response.json();
-            setFines(data); // Actualiza las multas sin necesidad de recargar la página
-          } catch (error) {
-            console.error("Error al obtener las multas:", error);
-          }
-        };
-        fetchFines();
-
-        setIsModalOpen(false);
-        setNewFine({ usuario: "", nombreCompleto: "", departamento: "", torre: "", multa: "" });
-      } else {
-        alert(data.message || "Hubo un error al registrar la multa");
-      }
-    } catch (error) {
-      console.error("Error al registrar la multa:", error);
-    }
-  };
-
   return (
     <div className="flex h-screen">
       {/* Sidebar */}
       <div className="bg-[#2F68A1] text-white w-64 flex flex-col justify-between">
         <div>
-          {/* Navigation */}
           <nav className="mt-10 space-y-4">
             <button onClick={() => navigate("/user")} className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left">
               <FontAwesomeIcon icon={faHome} className="text-xl mr-4" />
@@ -120,10 +121,43 @@ const Multas: React.FC = () => {
 
       {/* Main Content */}
       <div className="flex-1 bg-gray-300 relative p-10">
+        {/* Notificaciones */}
         <div className="absolute top-4 right-4">
-          <div className="w-12 h-12 bg-gray-500 rounded-full overflow-hidden border-2 border-white shadow-lg">
-            <img src="https://via.placeholder.com/150" alt="User" className="w-full h-full object-cover" />
-          </div>
+          <button
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="relative text-gray-700 hover:text-gray-900 focus:outline-none"
+          >
+            <FontAwesomeIcon icon={faBell} className="text-2xl" />
+            {notifications.length > 0 && (
+              <span className="absolute top-0 right-0 bg-red-500 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center">
+                {notifications.length}
+              </span>
+            )}
+          </button>
+
+          {showNotifications && (
+            <div className="absolute right-0 mt-2 w-80 bg-white shadow-md rounded-lg p-4 z-10">
+              <h2 className="text-lg font-bold mb-2">Notificaciones</h2>
+              {notifications.length === 0 ? (
+                <p className="text-gray-500">No tienes notificaciones.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {notifications.map((notif, index) => (
+                    <li key={index} className="bg-gray-100 p-3 rounded-lg shadow flex justify-between items-center">
+                      <div>
+                        <p className="text-sm"><strong>Usuario:</strong> {notif.usuario}</p>
+                        <p className="text-sm"><strong>Departamento:</strong> {notif.departamento}</p>
+                        <p className="text-sm"><strong>Multa:</strong> {notif.multa}</p>
+                      </div>
+                      <button className="text-red-600 hover:text-red-800 font-semibold" onClick={() => handleDeleteNotification(notif._id)}>
+                        Eliminar
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
 
         <h1 className="text-center text-2xl font-bold mb-6">Multas</h1>
@@ -145,11 +179,12 @@ const Multas: React.FC = () => {
               <tr className="bg-[#2F68A1] text-white">
                 <th className="px-4 py-2">ID</th>
                 <th className="px-4 py-2">Nombre completo</th>
-                <th className="px-4 py-2">Rol del usuario</th>
+                <th className="px-4 py-2">Rol usuario</th>
                 <th className="px-4 py-2">Torre</th>
                 <th className="px-4 py-2">Departamento</th>
                 <th className="px-4 py-2">Multas</th>
-                <th className="px-4 py-2">Acciones</th>
+                <th className="px-4 py-2">Descripción</th>
+                <th className="px-4 py-2">Fecha</th>
               </tr>
             </thead>
             <tbody>
@@ -161,90 +196,13 @@ const Multas: React.FC = () => {
                   <td className="border px-4 py-2">{fine.torre}</td>
                   <td className="border px-4 py-2">{fine.departamento}</td>
                   <td className="border px-4 py-2">{fine.multa}</td>
-                  <td className="border px-4 py-2 text-center">
-                    <button className="text-blue-500 mr-2 hover:text-blue-700">
-                      <FontAwesomeIcon icon={faPen} />
-                    </button>
-                    <button className="text-red-500 mr-2 hover:text-red-700">
-                      <FontAwesomeIcon icon={faTrash} />
-                    </button>
-                    <button className="text-gray-500 hover:text-gray-700">
-                      <FontAwesomeIcon icon={faFileAlt} />
-                    </button>
-                  </td>
+                  <td className="border px-4 py-2">{fine.descripcion}</td>
+                  <td className="border px-4 py-2">{fine.fecha}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-
-        <div className="flex justify-center mt-6">
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-white text-gray-800 px-6 py-2 rounded-full shadow-md hover:bg-gray-100"
-          >
-            <FontAwesomeIcon icon={faPlus} className="mr-2" />
-            Añadir multa
-          </button>
-        </div>
-
-        {/* Modal */}
-        {isModalOpen && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-              <h2 className="text-xl font-bold mb-4">Registrar Multa</h2>
-              <input
-                type="text"
-                placeholder="Nombre completo"
-                value={newFine.nombreCompleto}
-                onChange={(e) => setNewFine({ ...newFine, nombreCompleto: e.target.value })}
-                className="w-full p-2 mb-4 border rounded"
-              />
-              <input
-                type="text"
-                placeholder="Rol del usuario"
-                value={newFine.usuario}
-                onChange={(e) => setNewFine({ ...newFine, usuario: e.target.value })}
-                className="w-full p-2 mb-4 border rounded"
-              />
-              <input
-                type="text"
-                placeholder="Torre"
-                value={newFine.torre}
-                onChange={(e) => setNewFine({ ...newFine, torre: e.target.value })}
-                className="w-full p-2 mb-4 border rounded"
-              />
-              <input
-                type="number"
-                placeholder="Departamento"
-                value={newFine.departamento}
-                onChange={(e) => setNewFine({ ...newFine, departamento: e.target.value })}
-                className="w-full p-2 mb-4 border rounded"
-              />
-              <input
-                type="text"
-                placeholder="Multa ($)"
-                value={newFine.multa}
-                onChange={(e) => setNewFine({ ...newFine, multa: e.target.value })}
-                className="w-full p-2 mb-4 border rounded"
-              />
-              <div className="flex justify-end space-x-2">
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleModalSubmit}
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                >
-                  Guardar
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

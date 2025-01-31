@@ -11,9 +11,10 @@ import {
   faSearch,
   faPen,
   faTrash,
-  faFileAlt,
   faPlus,
 } from "@fortawesome/free-solid-svg-icons";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Multas: React.FC = () => {
   const navigate = useNavigate();
@@ -29,6 +30,8 @@ const Multas: React.FC = () => {
     fecha: "",
   });
   const [fines, setFines] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const finesPerPage = 7; // Cambiado a 7 elementos por página
 
   useEffect(() => {
     const fetchFines = async () => {
@@ -38,11 +41,59 @@ const Multas: React.FC = () => {
         setFines(data);
       } catch (error) {
         console.error("Error al obtener las multas:", error);
+        toast.error("Error al obtener las multas.");
       }
     };
 
     fetchFines();
   }, []);
+
+  // Función para obtener los datos del departamento
+  const fetchDepartmentData = async (departamento: string) => {
+    try {
+      const response = await fetch(
+        `https://api-celeste.onrender.com/api/obtener_datos_departamento?departamento=${departamento}`
+      );
+      const data = await response.json();
+      if (data) {
+        setNewFine((prev) => ({
+          ...prev,
+          usuario: data.usuario,
+          nombreCompleto: data.nombreCompleto,
+          torre: data.torre,
+        }));
+      } else {
+        // Si no se encuentra el departamento, vaciar los campos
+        setNewFine((prev) => ({
+          ...prev,
+          usuario: "",
+          nombreCompleto: "",
+          torre: "",
+        }));
+        toast.error("Departamento no encontrado.");
+      }
+    } catch (error) {
+      console.error("Error al obtener los datos del departamento:", error);
+      toast.error("Error al obtener los datos del departamento.");
+    }
+  };
+
+  // Manejar cambios en el campo "departamento"
+  const handleDepartmentChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const departamento = e.target.value;
+    setNewFine((prev) => ({ ...prev, departamento }));
+    if (departamento) {
+      await fetchDepartmentData(departamento);
+    } else {
+      // Si el campo de departamento está vacío, vaciar los campos
+      setNewFine((prev) => ({
+        ...prev,
+        usuario: "",
+        nombreCompleto: "",
+        torre: "",
+      }));
+    }
+  };
 
   const filteredFines = fines.filter((fine) => {
     const lowerSearchTerm = searchTerm.toLowerCase();
@@ -52,7 +103,43 @@ const Multas: React.FC = () => {
     );
   });
 
+  // Paginación
+  const indexOfLastFine = currentPage * finesPerPage;
+  const indexOfFirstFine = indexOfLastFine - finesPerPage;
+  const currentFines = filteredFines.slice(indexOfFirstFine, indexOfLastFine);
+
   const handleModalSubmit = async () => {
+    // Validar que el departamento no sea 1 (administrador)
+    if (newFine.departamento === "1") {
+      toast.error("No se puede multar al departamento 1 (administrador).");
+      return;
+    }
+
+    // Validar campos obligatorios
+    if (
+      !newFine.departamento ||
+      !newFine.nombreCompleto ||
+      !newFine.multa ||
+      !newFine.descripcion ||
+      !newFine.fecha
+    ) {
+      toast.error("Todos los campos son obligatorios.");
+      return;
+    }
+
+    // Validar que el campo "Multa" sea un número válido
+    if (isNaN(Number(newFine.multa)) || Number(newFine.multa) <= 0) {
+      toast.error("El valor de la multa debe ser un número válido y mayor que 0.");
+      return;
+    }
+
+    // Validar que la fecha no esté en el futuro
+    const today = new Date().toISOString().split("T")[0];
+    if (newFine.fecha > today) {
+      toast.error("La fecha de la multa no puede ser en el futuro.");
+      return;
+    }
+
     try {
       const response = await fetch("https://api-celeste.onrender.com/api/insertar_multas", {
         method: "POST",
@@ -64,8 +151,9 @@ const Multas: React.FC = () => {
 
       const data = await response.json();
       if (response.ok) {
-        console.log("Nueva multa registrada:", data);
+        toast.success("Multa registrada exitosamente.");
 
+        // Actualizar la lista de multas
         const fetchFines = async () => {
           try {
             const response = await fetch(
@@ -75,10 +163,12 @@ const Multas: React.FC = () => {
             setFines(data);
           } catch (error) {
             console.error("Error al obtener las multas:", error);
+            toast.error("Error al obtener las multas.");
           }
         };
         fetchFines();
 
+        // Cerrar el modal y resetear el estado
         setIsModalOpen(false);
         setNewFine({
           usuario: "",
@@ -90,18 +180,38 @@ const Multas: React.FC = () => {
           fecha: "",
         });
       } else {
-        alert(data.message || "Hubo un error al registrar la multa");
+        toast.error(data.message || "Hubo un error al registrar la multa.");
       }
     } catch (error) {
       console.error("Error al registrar la multa:", error);
+      toast.error("Error al registrar la multa.");
     }
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   return (
     <div className="flex h-screen">
+      {/* ToastContainer para mostrar notificaciones */}
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+
+      {/* Sidebar */}
       <div className="bg-[#2F68A1] text-white w-64 flex flex-col justify-between">
         <div>
           <nav className="mt-10 space-y-4">
+            {/* Botón de Inicio */}
             <button
               onClick={() => navigate("/admin")}
               className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
@@ -109,6 +219,8 @@ const Multas: React.FC = () => {
               <FontAwesomeIcon icon={faHome} className="text-xl mr-4" />
               <span className="text-sm font-medium">Inicio</span>
             </button>
+
+            {/* Botón de Usuarios */}
             <button
               onClick={() => navigate("/usuarios")}
               className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
@@ -116,6 +228,8 @@ const Multas: React.FC = () => {
               <FontAwesomeIcon icon={faUser} className="text-xl mr-4" />
               <span className="text-sm font-medium">Usuarios</span>
             </button>
+
+            {/* Botón de Pagos */}
             <button
               onClick={() => navigate("/Admin/pagos_ad")}
               className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
@@ -123,6 +237,8 @@ const Multas: React.FC = () => {
               <FontAwesomeIcon icon={faDollarSign} className="text-xl mr-4" />
               <span className="text-sm font-medium">Pagos</span>
             </button>
+
+            {/* Botón de Multas */}
             <button
               onClick={() => navigate("/Admin/multas_ad")}
               className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
@@ -130,6 +246,8 @@ const Multas: React.FC = () => {
               <FontAwesomeIcon icon={faGavel} className="text-xl mr-4" />
               <span className="text-sm font-medium">Multas</span>
             </button>
+
+            {/* Botón de Permisos de Portones */}
             <button
               onClick={() => navigate("/Admin/permisos_ad")}
               className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
@@ -139,6 +257,8 @@ const Multas: React.FC = () => {
             </button>
           </nav>
         </div>
+
+        {/* Botón de Cerrar Sesión */}
         <button
           onClick={() => navigate("/")}
           className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left mb-8"
@@ -148,27 +268,39 @@ const Multas: React.FC = () => {
         </button>
       </div>
 
+      {/* Contenido principal */}
       <div className="flex-1 bg-gray-300 relative p-10">
         <h1 className="text-center text-2xl font-bold mb-6">Multas</h1>
 
-        <div className="flex items-center bg-white rounded-full shadow-md px-4 py-2 mb-6">
-          <FontAwesomeIcon icon={faSearch} className="text-gray-500 mr-2" />
-          <input
-            type="text"
-            placeholder="Buscar por ID o nombre"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 bg-transparent focus:outline-none"
-          />
+        {/* Barra de búsqueda y botón para añadir multa */}
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center bg-white rounded-full shadow-md px-4 py-2">
+            <FontAwesomeIcon icon={faSearch} className="text-gray-500 mr-2" />
+            <input
+              type="text"
+              placeholder="Buscar por ID o nombre"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 bg-transparent focus:outline-none"
+            />
+          </div>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-white text-gray-800 px-6 py-2 rounded-full shadow-md hover:bg-gray-100"
+          >
+            <FontAwesomeIcon icon={faPlus} className="mr-2" />
+            Añadir multa
+          </button>
         </div>
 
+        {/* Tabla de multas */}
         <div className="overflow-x-auto">
           <table className="table-auto w-full text-left bg-white rounded-lg shadow-md">
             <thead>
               <tr className="bg-[#2F68A1] text-white">
                 <th className="px-4 py-2">ID</th>
                 <th className="px-4 py-2">Nombre completo</th>
-                <th className="px-4 py-2">Rol del usuario</th>
+                <th className="px-4 py-2">Rol usuario</th>
                 <th className="px-4 py-2">Torre</th>
                 <th className="px-4 py-2">Departamento</th>
                 <th className="px-4 py-2">Multas</th>
@@ -178,7 +310,7 @@ const Multas: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredFines.map((fine) => (
+              {currentFines.map((fine) => (
                 <tr key={fine.id} className="hover:bg-gray-100">
                   <td className="border px-4 py-2">{fine.id}</td>
                   <td className="border px-4 py-2">{fine.nombreCompleto}</td>
@@ -195,9 +327,6 @@ const Multas: React.FC = () => {
                     <button className="text-red-500 mr-2 hover:text-red-700">
                       <FontAwesomeIcon icon={faTrash} />
                     </button>
-                    <button className="text-gray-500 hover:text-gray-700">
-                      <FontAwesomeIcon icon={faFileAlt} />
-                    </button>
                   </td>
                 </tr>
               ))}
@@ -205,53 +334,58 @@ const Multas: React.FC = () => {
           </table>
         </div>
 
-        <div className="flex justify-center mt-6">
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-white text-gray-800 px-6 py-2 rounded-full shadow-md hover:bg-gray-100"
-          >
-            <FontAwesomeIcon icon={faPlus} className="mr-2" />
-            Añadir multa
-          </button>
-        </div>
+        {/* Paginador */}
+        {filteredFines.length > finesPerPage && (
+          <div className="flex justify-center mt-6">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg mr-2 hover:bg-blue-700"
+            >
+              Anterior
+            </button>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage * finesPerPage >= filteredFines.length}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Siguiente
+            </button>
+          </div>
+        )}
 
+        {/* Modal para añadir multa */}
         {isModalOpen && (
           <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
             <div className="bg-white p-6 rounded-lg shadow-lg w-96">
               <h2 className="text-xl font-bold mb-4">Registrar Multa</h2>
               <input
                 type="text"
+                placeholder="Departamento"
+                value={newFine.departamento}
+                onChange={handleDepartmentChange}
+                className="w-full p-2 mb-4 border rounded"
+              />
+              <input
+                type="text"
                 placeholder="Nombre completo"
                 value={newFine.nombreCompleto}
-                onChange={(e) =>
-                  setNewFine({ ...newFine, nombreCompleto: e.target.value })
-                }
-                className="w-full p-2 mb-4 border rounded"
+                readOnly
+                className="w-full p-2 mb-4 border rounded bg-gray-100"
               />
               <input
                 type="text"
                 placeholder="Rol del usuario"
                 value={newFine.usuario}
-                onChange={(e) =>
-                  setNewFine({ ...newFine, usuario: e.target.value })
-                }
-                className="w-full p-2 mb-4 border rounded"
+                readOnly
+                className="w-full p-2 mb-4 border rounded bg-gray-100"
               />
               <input
                 type="text"
                 placeholder="Torre"
                 value={newFine.torre}
-                onChange={(e) => setNewFine({ ...newFine, torre: e.target.value })}
-                className="w-full p-2 mb-4 border rounded"
-              />
-              <input
-                type="number"
-                placeholder="Departamento"
-                value={newFine.departamento}
-                onChange={(e) =>
-                  setNewFine({ ...newFine, departamento: e.target.value })
-                }
-                className="w-full p-2 mb-4 border rounded"
+                readOnly
+                className="w-full p-2 mb-4 border rounded bg-gray-100"
               />
               <input
                 type="text"

@@ -17,6 +17,10 @@ const User: React.FC = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
 
+  // Obtener el nombre y el departamento del usuario desde el localStorage
+  const userName = localStorage.getItem("userName") || "Usuario";
+  const userDepartment = localStorage.getItem("userDepartment") || "Departamento";
+
   // Función para obtener notificaciones desde el backend
   const fetchNotifications = async () => {
     try {
@@ -168,6 +172,13 @@ const User: React.FC = () => {
                           <p className="text-sm">
                             <strong>Multa:</strong> {notif.multa}
                           </p>
+                          <p className="text-sm">
+                            <strong>Descripción:</strong> {notif.descripcion}
+                          </p>
+                          <p className="text-sm">
+                            <strong>Fecha:</strong>{" "}
+                            {new Date(notif.fecha).toLocaleDateString()}
+                          </p>
                         </div>
 
                         {/* Eliminar Notificación */}
@@ -210,8 +221,9 @@ const User: React.FC = () => {
           </div>
         </div>
 
+        {/* Mensaje de bienvenida personalizado */}
         <h1 className="text-center text-2xl font-bold mb-12">
-          ¡Haz iniciado sesión como usuario!
+          ¡Bienvenid@, {userName} (Departamento {userDepartment})!
         </h1>
       </div>
     </div>

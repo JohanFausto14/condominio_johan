@@ -14,6 +14,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Usuarios: React.FC = () => {
   const navigate = useNavigate();
@@ -23,12 +25,11 @@ const Usuarios: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newUser, setNewUser] = useState({
     name: "",
-    lastName: "",
-    middleName: "",
     phone: "",
     department: "",
     tower: "",
     role: "",
+    password: "",
   });
 
   const filteredUsers = users.filter(
@@ -47,50 +48,95 @@ const Usuarios: React.FC = () => {
         console.error("Error al obtener usuarios:", error);
       }
     };
-    
+
     fetchUsers();
   }, []);
 
   // Registrar nuevo usuario
-  const handleAddUser = async () => {
-    const newUserEntry = {
-      name: newUser.name,
-      lastName: newUser.lastName,
-      middleName: newUser.middleName,
-      phone: newUser.phone,
-      department: Number(newUser.department),
-      tower: newUser.tower,
-      role: newUser.role,
-    };
-  
-    try {
-      const response = await axios.post("https://api-celeste.onrender.com/api/insertar_usuario", newUserEntry);
-      setUsers([...users, response.data.user]); // Actualizar lista de usuarios
-      setIsModalOpen(false);
-      setNewUser({
-        name: "",
-        lastName: "",
-        middleName: "",
-        phone: "",
-        department: "",
-        tower: "",
-        role: "",
-      });
-    } catch (error) {
-      // Verifica si es un error de Axios
-      if (axios.isAxiosError(error)) {
-        console.error("Error al registrar el usuario:", error.response?.data || error.message);
-      } else {
-        // Otro tipo de error
-        console.error("Error inesperado:", error);
-      }
-    }
+ // Registrar nuevo usuario
+const handleAddUser = async () => {
+  // Validar campos vacíos
+  if (
+    !newUser.name ||
+    !newUser.phone ||
+    !newUser.department ||
+    !newUser.tower ||
+    !newUser.role ||
+    !newUser.password
+  ) {
+    toast.error("Todos los campos son obligatorios.");
+    return;
+  }
+
+  // Validar que el celular tenga exactamente 10 dígitos
+  if (newUser.phone.length !== 10) {
+    toast.error("El número de celular debe tener exactamente 10 dígitos.");
+    return;
+  }
+
+  // Validar si el número de teléfono ya está registrado
+  const phoneExists = users.some((user) => user.phone === newUser.phone);
+  if (phoneExists) {
+    toast.error("El número de teléfono ya está registrado. Ingrese uno diferente.");
+    return;
+  }
+
+  // Convertir el nuevo departamento a número
+  const newDepartment = Number(newUser.department);
+
+  // Validar si el departamento ya está registrado
+  const departmentExists = users.some((user) => user.department === newDepartment);
+  if (departmentExists) {
+    toast.error("El departamento ya está registrado. Ingrese uno diferente.");
+    return;
+  }
+
+  const newUserEntry = {
+    name: newUser.name,
+    phone: newUser.phone,
+    department: newDepartment, // Usar el valor convertido a número
+    tower: newUser.tower,
+    role: newUser.role,
+    password: newUser.password,
   };
-  
-  
+
+  try {
+    const response = await axios.post("https://api-celeste.onrender.com/api/insertar_usuario", newUserEntry);
+    setUsers([...users, response.data.user]); // Actualizar lista de usuarios
+    setIsModalOpen(false);
+    setNewUser({
+      name: "",
+      phone: "",
+      department: "",
+      tower: "",
+      role: "",
+      password: "",
+    });
+    toast.success("Usuario registrado exitosamente.");
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      toast.error(`Error al registrar el usuario: ${error.response?.data?.message || error.message}`);
+    } else {
+      toast.error("Error inesperado al registrar el usuario.");
+    }
+  }
+};
 
   return (
     <div className="flex h-screen">
+      {/* ToastContainer para mostrar las alertas */}
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+
       {/* Sidebar */}
       <div className="bg-[#2F68A1] text-white w-64 flex flex-col justify-between">
         <div>
@@ -134,12 +180,12 @@ const Usuarios: React.FC = () => {
         </div>
         <div className="mb-10">
           <button
-                   onClick={() => navigate("/")}
-                   className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left mb-8"
-                 >
-                   <FontAwesomeIcon icon={faSignOutAlt} className="text-xl mr-4" />
-                   <span className="text-sm font-medium">Cerrar sesión</span>
-                 </button>
+            onClick={() => navigate("/")}
+            className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left mb-8"
+          >
+            <FontAwesomeIcon icon={faSignOutAlt} className="text-xl mr-4" />
+            <span className="text-sm font-medium">Cerrar sesión</span>
+          </button>
         </div>
       </div>
 
@@ -229,8 +275,12 @@ const Usuarios: React.FC = () => {
                   type="text"
                   placeholder="Celular"
                   value={newUser.phone}
-                  onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
+                  onChange={(e) => {
+                    const inputValue = e.target.value.replace(/[^0-9]/g, ""); // Solo números
+                    setNewUser({ ...newUser, phone: inputValue });
+                  }}
                   className="w-full border rounded-lg px-4 py-2"
+                  maxLength={10} // Limitar a 10 dígitos
                 />
                 <input
                   type="text"
@@ -256,6 +306,14 @@ const Usuarios: React.FC = () => {
                   <option value="Dueño">Dueño</option>
                   <option value="Administrador">Administrador</option>
                 </select>
+                {/* Nuevo campo para la contraseña */}
+                <input
+                  type="password"
+                  placeholder="Contraseña"
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                  className="w-full border rounded-lg px-4 py-2"
+                />
               </div>
               <div className="mt-6 flex justify-end">
                 <button

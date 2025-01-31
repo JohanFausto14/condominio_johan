@@ -129,7 +129,7 @@ const Admin: React.FC = () => {
           <div>
             <span className="block text-black font-bold mb-1">Teléfono:</span>
             <span className="bg-gray-100 px-24 py-2 rounded-3xl shadow-sm text-gray-800">
-              3386746221
+              3320131621
             </span>
           </div>
 
@@ -137,7 +137,7 @@ const Admin: React.FC = () => {
           <div>
             <span className="block text-black font-bold mb-1">Departamento:</span>
             <span className="bg-gray-100 px-32 py-2 rounded-3xl shadow-sm text-gray-800">
-              506
+              1
             </span>
           </div>
 
@@ -145,7 +145,7 @@ const Admin: React.FC = () => {
           <div>
             <span className="block text-black font-bold mb-1">Torre:</span>
             <span className="bg-gray-100 px-28 py-2 rounded-3xl shadow-sm text-gray-800">
-              Del Rey
+              A
             </span>
           </div>
         </div>
