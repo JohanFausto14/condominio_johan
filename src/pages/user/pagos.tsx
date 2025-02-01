@@ -152,9 +152,17 @@ const Pagos: React.FC = () => {
                       <div>
                         <p className="text-sm"><strong>Usuario:</strong> {notif.usuario}</p>
                         <p className="text-sm"><strong>Departamento:</strong> {notif.departamento}</p>
-                        <p className="text-sm"><strong>Pago:</strong> {notif.pago}</p>
+                        <p className="text-sm"><strong>Multa:</strong> {notif.multa}</p>
+                        <p className="text-sm"><strong>Descripción:</strong> {notif.descripcion}</p>
+                        <p className="text-sm">
+                          <strong>Fecha:</strong>{" "}
+                          {new Date(notif.fecha).toLocaleDateString()}
+                        </p>
                       </div>
-                      <button className="text-red-600 hover:text-red-800 font-semibold" onClick={() => handleDeleteNotification(notif._id)}>
+                      <button
+                        className="text-red-600 hover:text-red-800 font-semibold"
+                        onClick={() => handleDeleteNotification(notif._id)}
+                      >
                         Eliminar
                       </button>
                     </li>
