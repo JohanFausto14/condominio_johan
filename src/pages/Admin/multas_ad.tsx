@@ -12,9 +12,11 @@ import {
   faPen,
   faTrash,
   faPlus,
+  faSpinner
 } from "@fortawesome/free-solid-svg-icons";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Modal from "../../components/modal";
 
 const Multas: React.FC = () => {
   const navigate = useNavigate();
@@ -31,7 +33,8 @@ const Multas: React.FC = () => {
   });
   const [fines, setFines] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const finesPerPage = 7; // Cambiado a 7 elementos por página
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const finesPerPage = 7;
 
   useEffect(() => {
     const fetchFines = async () => {
@@ -48,7 +51,6 @@ const Multas: React.FC = () => {
     fetchFines();
   }, []);
 
-  // Función para obtener los datos del departamento
   const fetchDepartmentData = async (departamento: string) => {
     try {
       const response = await fetch(
@@ -63,7 +65,6 @@ const Multas: React.FC = () => {
           torre: data.torre,
         }));
       } else {
-        // Si no se encuentra el departamento, vaciar los campos
         setNewFine((prev) => ({
           ...prev,
           usuario: "",
@@ -78,14 +79,12 @@ const Multas: React.FC = () => {
     }
   };
 
-  // Manejar cambios en el campo "departamento"
   const handleDepartmentChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const departamento = e.target.value;
     setNewFine((prev) => ({ ...prev, departamento }));
     if (departamento) {
       await fetchDepartmentData(departamento);
     } else {
-      // Si el campo de departamento está vacío, vaciar los campos
       setNewFine((prev) => ({
         ...prev,
         usuario: "",
@@ -103,19 +102,18 @@ const Multas: React.FC = () => {
     );
   });
 
-  // Paginación
   const indexOfLastFine = currentPage * finesPerPage;
   const indexOfFirstFine = indexOfLastFine - finesPerPage;
   const currentFines = filteredFines.slice(indexOfFirstFine, indexOfLastFine);
 
   const handleModalSubmit = async () => {
-    // Validar que el departamento no sea 1 (administrador)
+    if (isSubmitting) return;
+
     if (newFine.departamento === "1") {
       toast.error("No se puede multar al departamento 1 (administrador).");
       return;
     }
 
-    // Validar campos obligatorios
     if (
       !newFine.departamento ||
       !newFine.nombreCompleto ||
@@ -127,13 +125,11 @@ const Multas: React.FC = () => {
       return;
     }
 
-    // Validar que el campo "Multa" sea un número válido
     if (isNaN(Number(newFine.multa)) || Number(newFine.multa) <= 0) {
       toast.error("El valor de la multa debe ser un número válido y mayor que 0.");
       return;
     }
 
-    // Validar que la fecha no esté en el futuro
     const today = new Date().toISOString().split("T")[0];
     if (newFine.fecha > today) {
       toast.error("La fecha de la multa no puede ser en el futuro.");
@@ -141,6 +137,7 @@ const Multas: React.FC = () => {
     }
 
     try {
+      setIsSubmitting(true);
       const response = await fetch("https://api-celeste.onrender.com/api/insertar_multas", {
         method: "POST",
         headers: {
@@ -152,8 +149,7 @@ const Multas: React.FC = () => {
       const data = await response.json();
       if (response.ok) {
         toast.success("Multa registrada exitosamente.");
-
-        // Actualizar la lista de multas
+        
         const fetchFines = async () => {
           try {
             const response = await fetch(
@@ -166,9 +162,8 @@ const Multas: React.FC = () => {
             toast.error("Error al obtener las multas.");
           }
         };
-        fetchFines();
+        await fetchFines();
 
-        // Cerrar el modal y resetear el estado
         setIsModalOpen(false);
         setNewFine({
           usuario: "",
@@ -185,6 +180,8 @@ const Multas: React.FC = () => {
     } catch (error) {
       console.error("Error al registrar la multa:", error);
       toast.error("Error al registrar la multa.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -194,7 +191,6 @@ const Multas: React.FC = () => {
 
   return (
     <div className="flex h-screen">
-      {/* ToastContainer para mostrar notificaciones */}
       <ToastContainer
         position="top-right"
         autoClose={5000}
@@ -211,7 +207,6 @@ const Multas: React.FC = () => {
       <div className="bg-[#2F68A1] text-white w-64 flex flex-col justify-between">
         <div>
           <nav className="mt-10 space-y-4">
-            {/* Botón de Inicio */}
             <button
               onClick={() => navigate("/admin")}
               className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
@@ -220,7 +215,6 @@ const Multas: React.FC = () => {
               <span className="text-sm font-medium">Inicio</span>
             </button>
 
-            {/* Botón de Usuarios */}
             <button
               onClick={() => navigate("/usuarios")}
               className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
@@ -229,7 +223,6 @@ const Multas: React.FC = () => {
               <span className="text-sm font-medium">Usuarios</span>
             </button>
 
-            {/* Botón de Pagos */}
             <button
               onClick={() => navigate("/Admin/pagos_ad")}
               className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
@@ -238,7 +231,6 @@ const Multas: React.FC = () => {
               <span className="text-sm font-medium">Pagos</span>
             </button>
 
-            {/* Botón de Multas */}
             <button
               onClick={() => navigate("/Admin/multas_ad")}
               className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
@@ -247,7 +239,6 @@ const Multas: React.FC = () => {
               <span className="text-sm font-medium">Multas</span>
             </button>
 
-            {/* Botón de Permisos de Portones */}
             <button
               onClick={() => navigate("/Admin/permisos_ad")}
               className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
@@ -258,7 +249,6 @@ const Multas: React.FC = () => {
           </nav>
         </div>
 
-        {/* Botón de Cerrar Sesión */}
         <button
           onClick={() => navigate("/")}
           className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left mb-8"
@@ -272,7 +262,6 @@ const Multas: React.FC = () => {
       <div className="flex-1 bg-gray-300 relative p-10">
         <h1 className="text-center text-2xl font-bold mb-6">Multas</h1>
 
-        {/* Barra de búsqueda y botón para añadir multa */}
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center bg-white rounded-full shadow-md px-4 py-2">
             <FontAwesomeIcon icon={faSearch} className="text-gray-500 mr-2" />
@@ -293,7 +282,6 @@ const Multas: React.FC = () => {
           </button>
         </div>
 
-        {/* Tabla de multas */}
         <div className="overflow-x-auto">
           <table className="table-auto w-full text-left bg-white rounded-lg shadow-md">
             <thead>
@@ -334,7 +322,6 @@ const Multas: React.FC = () => {
           </table>
         </div>
 
-        {/* Paginador */}
         {filteredFines.length > finesPerPage && (
           <div className="flex justify-center mt-6">
             <button
@@ -354,78 +341,80 @@ const Multas: React.FC = () => {
           </div>
         )}
 
-        {/* Modal para añadir multa */}
-        {isModalOpen && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-              <h2 className="text-xl font-bold mb-4">Registrar Multa</h2>
-              <input
-                type="text"
-                placeholder="Departamento"
-                value={newFine.departamento}
-                onChange={handleDepartmentChange}
-                className="w-full p-2 mb-4 border rounded"
-              />
-              <input
-                type="text"
-                placeholder="Nombre completo"
-                value={newFine.nombreCompleto}
-                readOnly
-                className="w-full p-2 mb-4 border rounded bg-gray-100"
-              />
-              <input
-                type="text"
-                placeholder="Rol del usuario"
-                value={newFine.usuario}
-                readOnly
-                className="w-full p-2 mb-4 border rounded bg-gray-100"
-              />
-              <input
-                type="text"
-                placeholder="Torre"
-                value={newFine.torre}
-                readOnly
-                className="w-full p-2 mb-4 border rounded bg-gray-100"
-              />
-              <input
-                type="text"
-                placeholder="Multa ($)"
-                value={newFine.multa}
-                onChange={(e) => setNewFine({ ...newFine, multa: e.target.value })}
-                className="w-full p-2 mb-4 border rounded"
-              />
-              <textarea
-                placeholder="Descripción de la multa"
-                value={newFine.descripcion}
-                onChange={(e) =>
-                  setNewFine({ ...newFine, descripcion: e.target.value })
-                }
-                className="w-full p-2 mb-4 border rounded"
-              />
-              <input
-                type="date"
-                placeholder="Fecha de la multa"
-                value={newFine.fecha}
-                onChange={(e) => setNewFine({ ...newFine, fecha: e.target.value })}
-                className="w-full p-2 mb-4 border rounded"
-              />
-              <div className="flex justify-end space-x-2">
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleModalSubmit}
-                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-                >
-                  Guardar
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+<Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} isSubmitting={isSubmitting}>
+  <h2 className="text-xl font-bold mb-4">Registrar Multa</h2>
+  <input
+    type="text"
+    placeholder="Departamento"
+    value={newFine.departamento}
+    onChange={handleDepartmentChange}
+    className="w-full p-2 mb-4 border rounded"
+  />
+  <input
+    type="text"
+    placeholder="Nombre completo"
+    value={newFine.nombreCompleto}
+    readOnly
+    className="w-full p-2 mb-4 border rounded bg-gray-100"
+  />
+  <input
+    type="text"
+    placeholder="Rol del usuario"
+    value={newFine.usuario}
+    readOnly
+    className="w-full p-2 mb-4 border rounded bg-gray-100"
+  />
+  <input
+    type="text"
+    placeholder="Torre"
+    value={newFine.torre}
+    readOnly
+    className="w-full p-2 mb-4 border rounded bg-gray-100"
+  />
+  <input
+    type="text"
+    placeholder="Multa ($)"
+    value={newFine.multa}
+    onChange={(e) => setNewFine({ ...newFine, multa: e.target.value })}
+    className="w-full p-2 mb-4 border rounded"
+  />
+  <textarea
+    placeholder="Descripción de la multa"
+    value={newFine.descripcion}
+    onChange={(e) => setNewFine({ ...newFine, descripcion: e.target.value })}
+    className="w-full p-2 mb-4 border rounded"
+  />
+  <input
+    type="date"
+    placeholder="Fecha de la multa"
+    value={newFine.fecha}
+    onChange={(e) => setNewFine({ ...newFine, fecha: e.target.value })}
+    className="w-full p-2 mb-4 border rounded"
+  />
+  <div className="flex justify-end space-x-2">
+    <button
+      onClick={() => setIsModalOpen(false)}
+      className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400 disabled:opacity-50"
+      disabled={isSubmitting}
+    >
+      Cancelar
+    </button>
+    <button
+      onClick={handleModalSubmit}
+      className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center min-w-[100px]"
+      disabled={isSubmitting}
+    >
+      {isSubmitting ? (
+        <>
+          <FontAwesomeIcon icon={faSpinner} className="animate-spin mr-2" />
+          Guardando...
+        </>
+      ) : (
+        "Guardar"
+      )}
+    </button>
+  </div>
+</Modal>
       </div>
     </div>
   );
