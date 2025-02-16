@@ -11,11 +11,20 @@ import {
   faBell,
 } from "@fortawesome/free-solid-svg-icons";
 
+interface Notification {
+  _id: string;
+  usuario: string;
+  departamento: string;
+  multa: string;
+  descripcion: string;
+  fecha: string;
+}
+
 const User: React.FC = () => {
   const navigate = useNavigate();
   const [userImage, setUserImage] = useState<string | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   // Obtener el nombre y el departamento del usuario desde el localStorage
   const userName = localStorage.getItem("userName") || "Usuario";

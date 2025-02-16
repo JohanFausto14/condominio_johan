@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useCallback  } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useNavigate } from "react-router-dom";
 import {
@@ -10,77 +10,124 @@ import {
   faSearch,
   faBell,
 } from "@fortawesome/free-solid-svg-icons";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+interface Fine {
+  id: number;
+  nombreCompleto: string;
+  usuario: string;
+  torre: string;
+  departamento: string;
+  multa: string;
+  descripcion: string;
+  fecha: string;
+}
+
+interface Notification {
+  _id: string;
+  usuario: string;
+  departamento: string;
+  multa: string;
+  descripcion: string;
+  fecha: string;
+}
 
 const Multas: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [fines, setFines] = useState<any[]>([]);
+  const [fines, setFines] = useState<Fine[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const token = localStorage.getItem("token"); // Obtener el token del localStorage
 
+  // Obtener multas
   useEffect(() => {
     const fetchFines = async () => {
       try {
-        const response = await fetch("https://api-celeste.onrender.com/api/obtener_multas");
+        const response = await fetch("http://localhost:4000/api/obtener_multas", {
+          headers: {
+            Authorization: `Bearer ${token}`, // Incluir el token en el encabezado
+          },
+        });
+        if (!response.ok) {
+          throw new Error("Error al obtener las multas.");
+        }
         const data = await response.json();
         setFines(data);
       } catch (error) {
         console.error("Error al obtener las multas:", error);
+        toast.error("Error al obtener las multas.");
       }
     };
 
     fetchFines();
-  }, []);
+  }, [token]);
 
-  // Función para obtener notificaciones
-  const fetchNotifications = async () => {
+
+  // ... (código anterior)
+  
+  const fetchNotifications = useCallback(async () => {
     try {
       const department = localStorage.getItem("userDepartment");
       if (!department) {
-        throw new Error("No se encontró el departamento");
+        throw new Error("No se encontró el departamento.");
       }
-
+  
       const response = await fetch(
-        `https://api-celeste.onrender.com/api/notificaciones?department=${department}`
+        `http://localhost:4000/api/notificaciones?department=${department}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
-
+  
       if (!response.ok) {
-        throw new Error("Error al obtener notificaciones");
+        throw new Error("Error al obtener notificaciones.");
       }
-
+  
       const data = await response.json();
       setNotifications(data);
     } catch (error) {
       console.error("Error al obtener las notificaciones:", error);
+      toast.error("Error al obtener las notificaciones.");
     }
-  };
-
+  }, [token]); // Dependencias de `fetchNotifications`
+  
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 10000);
+    const interval = setInterval(fetchNotifications, 10000); // Actualizar notificaciones cada 10 segundos
     return () => clearInterval(interval);
-  }, []);
-
-  // Función para eliminar una notificación
+  }, [fetchNotifications]); // `fetchNotifications` como dependencia
+  // Eliminar una notificación
   const handleDeleteNotification = async (notificationId: string) => {
     try {
       const response = await fetch(
-        `https://api-celeste.onrender.com/api/notificaciones/${notificationId}`,
-        { method: "DELETE" }
+        `http://localhost:4000/api/notificaciones/${notificationId}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`, // Incluir el token en el encabezado
+          },
+        }
       );
 
       if (!response.ok) {
-        throw new Error("Error al eliminar la notificación");
+        throw new Error("Error al eliminar la notificación.");
       }
 
       setNotifications((prevNotifications) =>
         prevNotifications.filter((notif) => notif._id !== notificationId)
       );
+      toast.success("Notificación eliminada exitosamente.");
     } catch (error) {
       console.error("Error al eliminar la notificación:", error);
+      toast.error("Error al eliminar la notificación.");
     }
   };
 
+  // Filtrar multas
   const filteredFines = fines.filter((fine) => {
     const lowerSearchTerm = searchTerm.toLowerCase();
     return (
@@ -91,35 +138,62 @@ const Multas: React.FC = () => {
 
   return (
     <div className="flex h-screen">
+      {/* ToastContainer para mostrar alertas */}
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+
       {/* Sidebar */}
       <div className="bg-[#2F68A1] text-white w-64 flex flex-col justify-between">
         <div>
           <nav className="mt-10 space-y-4">
-            <button onClick={() => navigate("/user")} className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left">
+            <button
+              onClick={() => navigate("/user")}
+              className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
+            >
               <FontAwesomeIcon icon={faHome} className="text-xl mr-4" />
               <span className="text-sm font-medium">Inicio</span>
             </button>
-            <button onClick={() => navigate("/pagos")} className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left">
+            <button
+              onClick={() => navigate("/pagos")}
+              className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
+            >
               <FontAwesomeIcon icon={faDollarSign} className="text-xl mr-4" />
               <span className="text-sm font-medium">Pagos</span>
             </button>
-            <button className="flex items-center px-6 py-3 bg-blue-600 w-full text-left">
+            <button
+              className="flex items-center px-6 py-3 bg-blue-600 w-full text-left"
+            >
               <FontAwesomeIcon icon={faGavel} className="text-xl mr-4" />
               <span className="text-sm font-medium">Multas</span>
             </button>
-            <button onClick={() => navigate("/permisos")} className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left">
+            <button
+              onClick={() => navigate("/permisos")}
+              className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left"
+            >
               <FontAwesomeIcon icon={faDoorOpen} className="text-xl mr-4" />
               <span className="text-sm font-medium">Permisos portones</span>
             </button>
           </nav>
         </div>
-        <button onClick={() => navigate("/")} className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left mb-8">
+        <button
+          onClick={() => navigate("/")}
+          className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left mb-8"
+        >
           <FontAwesomeIcon icon={faSignOutAlt} className="text-xl mr-4" />
           <span className="text-sm font-medium">Cerrar sesión</span>
         </button>
       </div>
 
-      {/* Main Content */}
+      {/* Contenido principal */}
       <div className="flex-1 bg-gray-300 relative p-10">
         {/* Notificaciones */}
         <div className="absolute top-4 right-4">
@@ -142,8 +216,8 @@ const Multas: React.FC = () => {
                 <p className="text-gray-500">No tienes notificaciones.</p>
               ) : (
                 <ul className="space-y-2">
-                  {notifications.map((notif, index) => (
-                    <li key={index} className="bg-gray-100 p-3 rounded-lg shadow flex justify-between items-center">
+                  {notifications.map((notif) => (
+                    <li key={notif._id} className="bg-gray-100 p-3 rounded-lg shadow flex justify-between items-center">
                       <div>
                         <p className="text-sm"><strong>Usuario:</strong> {notif.usuario}</p>
                         <p className="text-sm"><strong>Departamento:</strong> {notif.departamento}</p>
@@ -170,6 +244,7 @@ const Multas: React.FC = () => {
 
         <h1 className="text-center text-2xl font-bold mb-6">Multas</h1>
 
+        {/* Barra de búsqueda */}
         <div className="flex items-center bg-white rounded-full shadow-md px-4 py-2 mb-6">
           <FontAwesomeIcon icon={faSearch} className="text-gray-500 mr-2" />
           <input
@@ -181,6 +256,7 @@ const Multas: React.FC = () => {
           />
         </div>
 
+        {/* Tabla de multas */}
         <div className="overflow-x-auto">
           <table className="table-auto w-full text-left bg-white rounded-lg shadow-md">
             <thead>

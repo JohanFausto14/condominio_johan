@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useNavigate } from "react-router-dom";
 import {
@@ -10,32 +10,54 @@ import {
   faSearch,
   faBell,
 } from "@fortawesome/free-solid-svg-icons";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+// Interfaces para tipar los datos
+interface Payment {
+  id: number;
+  nombreCompleto: string;
+  role: string;
+  tower: string;
+  department: number;
+  pagado: boolean;
+}
+
+interface Notification {
+  _id: string;
+  usuario: string;
+  departamento: string;
+  multa: string;
+  descripcion: string;
+  fecha: string;
+}
 
 const Pagos: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
-  const [payments, setPayments] = useState<any[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([]);
-
-  // Datos simulados de pagos
-  const simulatedPayments = [
-    { id: 1, nombreCompleto: "Ari Johan Alvarado Fausto", role: "Administrador", tower: "Del Rey", department: 506, pagado: true },
-    { id: 2, nombreCompleto: "Vania Abril Alvarado Fausto", role: "Inquilino", tower: "Alta", department: 518, pagado: true },
-    { id: 3, nombreCompleto: "Valeria Gómez Torres", role: "Dueño", tower: "Baja", department: 507, pagado: false },
-    { id: 4, nombreCompleto: "Diego Ramírez Pérez", role: "Inquilino", tower: "Fina", department: 514, pagado: true },
-    { id: 5, nombreCompleto: "Lucas Martínez Rivera", role: "Inquilino", tower: "Country", department: 501, pagado: false },
-    { id: 6, nombreCompleto: "Clara Fernández Ruiz", role: "Dueño", tower: "Del Castillo", department: 516, pagado: false },
-    { id: 7, nombreCompleto: "Camila Rodríguez Ortega", role: "Inquilino", tower: "Gemela", department: 524, pagado: true },
-  ];
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const token = localStorage.getItem("token"); // Obtener el token del localStorage
 
   useEffect(() => {
+    // Datos simulados de pagos
+    const simulatedPayments: Payment[] = [
+      { id: 1, nombreCompleto: "Ari Johan Alvarado Fausto", role: "Administrador", tower: "Del Rey", department: 506, pagado: true },
+      { id: 2, nombreCompleto: "Vania Abril Alvarado Fausto", role: "Inquilino", tower: "Alta", department: 518, pagado: true },
+      { id: 3, nombreCompleto: "Valeria Gómez Torres", role: "Dueño", tower: "Baja", department: 507, pagado: false },
+      { id: 4, nombreCompleto: "Diego Ramírez Pérez", role: "Inquilino", tower: "Fina", department: 514, pagado: true },
+      { id: 5, nombreCompleto: "Lucas Martínez Rivera", role: "Inquilino", tower: "Country", department: 501, pagado: false },
+      { id: 6, nombreCompleto: "Clara Fernández Ruiz", role: "Dueño", tower: "Del Castillo", department: 516, pagado: false },
+      { id: 7, nombreCompleto: "Camila Rodríguez Ortega", role: "Inquilino", tower: "Gemela", department: 524, pagado: true },
+    ];
+  
     // Simular la carga de pagos
     setPayments(simulatedPayments);
-  }, []);
+  }, []); // Array de dependencias vacío
 
   // Obtener notificaciones
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       const department = localStorage.getItem("userDepartment");
       if (!department) {
@@ -43,7 +65,12 @@ const Pagos: React.FC = () => {
       }
 
       const response = await fetch(
-        `https://api-celeste.onrender.com/api/notificaciones?department=${department}`
+        `https://api-celeste.onrender.com/api/notificaciones?department=${department}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Incluir el token en el encabezado
+          },
+        }
       );
 
       if (!response.ok) {
@@ -54,21 +81,29 @@ const Pagos: React.FC = () => {
       setNotifications(data);
     } catch (error) {
       console.error("Error al obtener las notificaciones:", error);
+      toast.error("Error al obtener las notificaciones.");
     }
-  };
+  }, [token]); // Dependencias de fetchNotifications
 
   useEffect(() => {
+    
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 10000);
+    
+    const interval = setInterval(fetchNotifications, 10000); // Actualizar notificaciones cada 10 segundos
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchNotifications]); // Dependencia: fetchNotifications
 
   // Eliminar notificación
   const handleDeleteNotification = async (notificationId: string) => {
     try {
       const response = await fetch(
         `https://api-celeste.onrender.com/api/notificaciones/${notificationId}`,
-        { method: "DELETE" }
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`, // Incluir el token en el encabezado
+          },
+        }
       );
 
       if (!response.ok) {
@@ -78,8 +113,10 @@ const Pagos: React.FC = () => {
       setNotifications((prevNotifications) =>
         prevNotifications.filter((notif) => notif._id !== notificationId)
       );
+      toast.success("Notificación eliminada exitosamente.");
     } catch (error) {
       console.error("Error al eliminar la notificación:", error);
+      toast.error("Error al eliminar la notificación.");
     }
   };
 
@@ -96,6 +133,19 @@ const Pagos: React.FC = () => {
 
   return (
     <div className="flex h-screen">
+      {/* ToastContainer para mostrar alertas */}
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
+
       {/* Sidebar */}
       <div className="bg-[#2F68A1] text-white w-64 flex flex-col justify-between">
         <div>
@@ -147,8 +197,8 @@ const Pagos: React.FC = () => {
                 <p className="text-gray-500">No tienes notificaciones.</p>
               ) : (
                 <ul className="space-y-2">
-                  {notifications.map((notif, index) => (
-                    <li key={index} className="bg-gray-100 p-3 rounded-lg shadow flex justify-between items-center">
+                  {notifications.map((notif) => (
+                    <li key={notif._id} className="bg-gray-100 p-3 rounded-lg shadow flex justify-between items-center">
                       <div>
                         <p className="text-sm"><strong>Usuario:</strong> {notif.usuario}</p>
                         <p className="text-sm"><strong>Departamento:</strong> {notif.departamento}</p>

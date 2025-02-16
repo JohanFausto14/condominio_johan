@@ -3,10 +3,19 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHome, faDollarSign, faGavel, faDoorOpen, faSignOutAlt, faSearch, faBell } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
 
+interface Notification {
+  _id: string;
+  usuario: string;
+  departamento: string;
+  multa: string;
+  descripcion: string;
+  fecha: string;
+}
+
 const PermisosPortones: React.FC = () => {
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const permissions = [
     { id: 1, name: "Ari Johan Alvarado Fausto", role: "Administrador", tower: "Del Rey", department: 506, permission: "Autorizado" },

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faHome,
@@ -17,13 +17,22 @@ import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+interface User {
+  _id?: string; // Cambiado a `_id` para coincidir con la respuesta del backend
+  name: string;
+  phone: string;
+  department: string;
+  tower: string;
+  role: string;
+  password?: string;
+}
+
 const Usuarios: React.FC = () => {
   const navigate = useNavigate();
-
-  const [users, setUsers] = useState<any[]>([]); // Lista de usuarios obtenida del backend
+  const [users, setUsers] = useState<User[]>([]); // Lista de usuarios obtenida del backend
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [newUser, setNewUser] = useState({
+  const [newUser, setNewUser] = useState<User>({
     name: "",
     phone: "",
     department: "",
@@ -32,94 +41,87 @@ const Usuarios: React.FC = () => {
     password: "",
   });
 
+  const token = localStorage.getItem("token");
+
   const filteredUsers = users.filter(
     (user) =>
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.id?.toString().includes(searchQuery)
+      user._id?.toString().includes(searchQuery)
   );
 
-  // Obtener usuarios al cargar el componente
-  React.useEffect(() => {
+  useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get("https://api-celeste.onrender.com/api/obtener_usuarios");
+        const response = await axios.get("http://localhost:4000/api/obtener_usuarios", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         setUsers(response.data.users);
       } catch (error) {
         console.error("Error al obtener usuarios:", error);
+        toast.error("Error al obtener usuarios. Por favor, verifica tu autenticación.");
       }
     };
 
     fetchUsers();
-  }, []);
+  }, [token]);
 
- // Registrar nuevo usuario
-const handleAddUser = async () => {
-  // Validar campos vacíos
-  if (
-    !newUser.name ||
-    !newUser.phone ||
-    !newUser.department ||
-    !newUser.tower ||
-    !newUser.role ||
-    !newUser.password
-  ) {
-    toast.error("Todos los campos son obligatorios.");
-    return;
-  }
-
-  // Validar que el celular tenga exactamente 10 dígitos
-  if (newUser.phone.length !== 10) {
-    toast.error("El número de celular debe tener exactamente 10 dígitos.");
-    return;
-  }
-
-  // Validar si el número de teléfono ya está registrado
-  const phoneExists = users.some((user) => user.phone === newUser.phone);
-  if (phoneExists) {
-    toast.error("El número de teléfono ya está registrado. Ingrese uno diferente.");
-    return;
-  }
-
-  // Convertir el nuevo departamento a número
-  const newDepartment = Number(newUser.department);
-
-  // Validar si el departamento ya está registrado
-  const departmentExists = users.some((user) => user.department === newDepartment);
-  if (departmentExists) {
-    toast.error("El departamento ya está registrado. Ingrese uno diferente.");
-    return;
-  }
-
-  const newUserEntry = {
-    name: newUser.name,
-    phone: newUser.phone,
-    department: newDepartment, // Usar el valor convertido a número
-    tower: newUser.tower,
-    role: newUser.role,
-    password: newUser.password,
-  };
-
-  try {
-    const response = await axios.post("https://api-celeste.onrender.com/api/insertar_usuario", newUserEntry);
-    setUsers([...users, response.data.user]); // Actualizar lista de usuarios
-    setIsModalOpen(false);
-    setNewUser({
-      name: "",
-      phone: "",
-      department: "",
-      tower: "",
-      role: "",
-      password: "",
-    });
-    toast.success("Usuario registrado exitosamente.");
-  } catch (error) {
-    if (axios.isAxiosError(error)) {
-      toast.error(`Error al registrar el usuario: ${error.response?.data?.message || error.message}`);
-    } else {
-      toast.error("Error inesperado al registrar el usuario.");
+  const handleAddUser = async () => {
+    if (
+      !newUser.name ||
+      !newUser.phone ||
+      !newUser.department ||
+      !newUser.tower ||
+      !newUser.role ||
+      !newUser.password
+    ) {
+      toast.error("Todos los campos son obligatorios.");
+      return;
     }
-  }
-};
+
+    if (newUser.phone.length !== 10) {
+      toast.error("El número de celular debe tener exactamente 10 dígitos.");
+      return;
+    }
+
+    const phoneExists = users.some((user) => user.phone === newUser.phone);
+    if (phoneExists) {
+      toast.error("El número de teléfono ya está registrado. Ingrese uno diferente.");
+      return;
+    }
+
+    const departmentExists = users.some((user) => user.department === newUser.department);
+    if (departmentExists) {
+      toast.error("El departamento ya está registrado. Ingrese uno diferente.");
+      return;
+    }
+
+    try {
+      const response = await axios.post("http://localhost:4000/api/insertar_usuario", newUser, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setUsers([...users, response.data.user]);
+      setIsModalOpen(false);
+      setNewUser({
+        name: "",
+        phone: "",
+        department: "",
+        tower: "",
+        role: "",
+        password: "",
+      });
+      toast.success("Usuario registrado exitosamente.");
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        toast.error(`Error al registrar el usuario: ${error.response?.data?.message || error.message}`);
+      } else {
+        toast.error("Error inesperado al registrar el usuario.");
+      }
+    }
+  };
 
   return (
     <div className="flex h-screen">
@@ -281,13 +283,13 @@ const handleAddUser = async () => {
                   className="w-full border rounded-lg px-4 py-2"
                   maxLength={10} // Limitar a 10 dígitos
                 />
-                <input
-                  type="text"
-                  placeholder="Departamento"
-                  value={newUser.department}
-                  onChange={(e) => setNewUser({ ...newUser, department: e.target.value })}
-                  className="w-full border rounded-lg px-4 py-2"
-                />
+             <input
+  type="text"
+  placeholder="Departamento"
+  value={newUser.department}
+  onChange={(e) => setNewUser({ ...newUser, department: e.target.value })}
+  className="w-full border rounded-lg px-4 py-2"
+/>
                 <input
                   type="text"
                   placeholder="Torre"
