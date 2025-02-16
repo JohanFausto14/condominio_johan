@@ -52,7 +52,6 @@ const Usuarios: React.FC = () => {
     fetchUsers();
   }, []);
 
-  // Registrar nuevo usuario
  // Registrar nuevo usuario
 const handleAddUser = async () => {
   // Validar campos vacíos

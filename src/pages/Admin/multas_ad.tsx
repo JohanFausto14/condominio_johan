@@ -18,6 +18,17 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Modal from "../../components/modal";
 
+interface Fine {
+  id: number;
+  usuario: string;
+  nombreCompleto: string;
+  departamento: string;
+  torre: string;
+  multa: string;
+  descripcion: string;
+  fecha: string;
+}
+
 const Multas: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
@@ -31,15 +42,25 @@ const Multas: React.FC = () => {
     descripcion: "",
     fecha: "",
   });
-  const [fines, setFines] = useState<any[]>([]);
+  const [fines, setFines] = useState<Fine[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const finesPerPage = 7;
+  const token = localStorage.getItem("token"); // Obtener el token del localStorage
 
   useEffect(() => {
     const fetchFines = async () => {
       try {
-        const response = await fetch("https://api-celeste.onrender.com/api/obtener_multas");
+        const response = await fetch("http://localhost:4000/api/obtener_multas", {
+          headers: {
+            Authorization: `Bearer ${token}`, // Incluir el token en el encabezado
+          },
+        });
+  
+        if (!response.ok) {
+          throw new Error("Error al obtener las multas.");
+        }
+  
         const data = await response.json();
         setFines(data);
       } catch (error) {
@@ -47,15 +68,25 @@ const Multas: React.FC = () => {
         toast.error("Error al obtener las multas.");
       }
     };
-
+  
     fetchFines();
-  }, []);
+  }, [token]); // Dependencia: token
 
   const fetchDepartmentData = async (departamento: string) => {
     try {
       const response = await fetch(
-        `https://api-celeste.onrender.com/api/obtener_datos_departamento?departamento=${departamento}`
+        `http://localhost:4000/api/obtener_datos_departamento?departamento=${departamento}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Incluir el token en el encabezado
+          },
+        }
       );
+  
+      if (!response.ok) {
+        throw new Error("Error al obtener los datos del departamento.");
+      }
+  
       const data = await response.json();
       if (data) {
         setNewFine((prev) => ({
@@ -108,12 +139,12 @@ const Multas: React.FC = () => {
 
   const handleModalSubmit = async () => {
     if (isSubmitting) return;
-
+  
     if (newFine.departamento === "1") {
       toast.error("No se puede multar al departamento 1 (administrador).");
       return;
     }
-
+  
     if (
       !newFine.departamento ||
       !newFine.nombreCompleto ||
@@ -124,37 +155,41 @@ const Multas: React.FC = () => {
       toast.error("Todos los campos son obligatorios.");
       return;
     }
-
+  
     if (isNaN(Number(newFine.multa)) || Number(newFine.multa) <= 0) {
       toast.error("El valor de la multa debe ser un número válido y mayor que 0.");
       return;
     }
-
+  
     const today = new Date().toISOString().split("T")[0];
     if (newFine.fecha > today) {
       toast.error("La fecha de la multa no puede ser en el futuro.");
       return;
     }
-
+  
     try {
       setIsSubmitting(true);
-      const response = await fetch("https://api-celeste.onrender.com/api/insertar_multas", {
+      const response = await fetch("http://localhost:4000/api/insertar_multas", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`, // Incluir el token en el encabezado
         },
         body: JSON.stringify(newFine),
       });
-
+  
       const data = await response.json();
       if (response.ok) {
         toast.success("Multa registrada exitosamente.");
-        
+  
+        // Actualizar la lista de multas
         const fetchFines = async () => {
           try {
-            const response = await fetch(
-              "https://api-celeste.onrender.com/api/obtener_multas"
-            );
+            const response = await fetch("http://localhost:4000/api/obtener_multas", {
+              headers: {
+                Authorization: `Bearer ${token}`, // Incluir el token en el encabezado
+              },
+            });
             const data = await response.json();
             setFines(data);
           } catch (error) {
@@ -163,7 +198,7 @@ const Multas: React.FC = () => {
           }
         };
         await fetchFines();
-
+  
         setIsModalOpen(false);
         setNewFine({
           usuario: "",

@@ -4,10 +4,9 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import fondoImage from "../../assets/Fondo.jpg";
 
-// Función que se encargará de verificar el teléfono y la contraseña (al backend)
 const loginUser = async (phone: string, password: string) => {
   try {
-    const response = await fetch('https://api-celeste.onrender.com/api/login', { // Cambia la URL a localhost
+    const response = await fetch('http://localhost:4000/api/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -20,7 +19,7 @@ const loginUser = async (phone: string, password: string) => {
     }
 
     const data = await response.json();
-    return data.userData; // Retornar los datos del usuario
+    return data; // Retornar todos los datos, incluyendo el token
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : "Error desconocido");
   }
@@ -43,7 +42,7 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+  
     // Validar que el número de teléfono tenga exactamente 10 dígitos
     if (phoneNumber.length !== 10) {
       toast.error("El número de teléfono debe tener exactamente 10 dígitos.", {
@@ -57,18 +56,19 @@ const Login: React.FC = () => {
       });
       return;
     }
-
+  
     try {
       // Llamar a la función loginUser que verifica el número y la contraseña en el backend
-      const userData = await loginUser(phoneNumber, password);
-
+      const { token, userData } = await loginUser(phoneNumber, password);
+  
       console.log("Datos recibidos de la API:", userData);
-
-      // Guardar los datos del usuario en localStorage
+  
+      // Guardar los datos del usuario y el token en localStorage
       localStorage.setItem("userName", userData.name);
       localStorage.setItem("userProfile", userData.role);
       localStorage.setItem("userDepartment", userData.department);
-
+      localStorage.setItem("token", token); // Guardar el token en localStorage
+  
       // Alerta de éxito: el usuario se autenticó correctamente
       toast.success("Autenticación exitosa. Redirigiendo...", {
         position: "top-center",
@@ -79,7 +79,7 @@ const Login: React.FC = () => {
         draggable: true,
         progress: undefined,
       });
-
+  
       // Redirigir al dashboard según el perfil
       setTimeout(() => {
         if (userData.role === "Administrador") {
