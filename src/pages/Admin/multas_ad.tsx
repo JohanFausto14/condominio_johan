@@ -51,7 +51,7 @@ const Multas: React.FC = () => {
   useEffect(() => {
     const fetchFines = async () => {
       try {
-        const response = await fetch("http://localhost:4000/api/obtener_multas", {
+        const response = await fetch("https://api-celeste.onrender.com/api/obtener_multas", {
           headers: {
             Authorization: `Bearer ${token}`, // Incluir el token en el encabezado
           },
@@ -75,7 +75,7 @@ const Multas: React.FC = () => {
   const fetchDepartmentData = async (departamento: string) => {
     try {
       const response = await fetch(
-        `http://localhost:4000/api/obtener_datos_departamento?departamento=${departamento}`,
+        `https://api-celeste.onrender.com/api/obtener_datos_departamento?departamento=${departamento}`,
         {
           headers: {
             Authorization: `Bearer ${token}`, // Incluir el token en el encabezado
@@ -169,7 +169,7 @@ const Multas: React.FC = () => {
   
     try {
       setIsSubmitting(true);
-      const response = await fetch("http://localhost:4000/api/insertar_multas", {
+      const response = await fetch("https://api-celeste.onrender.com/api/insertar_multas", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -185,7 +185,7 @@ const Multas: React.FC = () => {
         // Actualizar la lista de multas
         const fetchFines = async () => {
           try {
-            const response = await fetch("http://localhost:4000/api/obtener_multas", {
+            const response = await fetch("https://api-celeste.onrender.com/api/obtener_multas", {
               headers: {
                 Authorization: `Bearer ${token}`, // Incluir el token en el encabezado
               },

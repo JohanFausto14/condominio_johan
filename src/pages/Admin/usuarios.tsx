@@ -52,7 +52,7 @@ const Usuarios: React.FC = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await axios.get("http://localhost:4000/api/obtener_usuarios", {
+        const response = await axios.get("https://api-celeste.onrender.com/api/obtener_usuarios", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -98,7 +98,7 @@ const Usuarios: React.FC = () => {
     }
 
     try {
-      const response = await axios.post("http://localhost:4000/api/insertar_usuario", newUser, {
+      const response = await axios.post("https://api-celeste.onrender.com/api/insertar_usuario", newUser, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

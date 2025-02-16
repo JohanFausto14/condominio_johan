@@ -45,7 +45,7 @@ const Multas: React.FC = () => {
   useEffect(() => {
     const fetchFines = async () => {
       try {
-        const response = await fetch("http://localhost:4000/api/obtener_multas", {
+        const response = await fetch("https://api-celeste.onrender.com/api/obtener_multas", {
           headers: {
             Authorization: `Bearer ${token}`, // Incluir el token en el encabezado
           },
@@ -75,7 +75,7 @@ const Multas: React.FC = () => {
       }
   
       const response = await fetch(
-        `http://localhost:4000/api/notificaciones?department=${department}`,
+        `https://api-celeste.onrender.com/api/notificaciones?department=${department}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -104,7 +104,7 @@ const Multas: React.FC = () => {
   const handleDeleteNotification = async (notificationId: string) => {
     try {
       const response = await fetch(
-        `http://localhost:4000/api/notificaciones/${notificationId}`,
+        `https://api-celeste.onrender.com/api/notificaciones/${notificationId}`,
         {
           method: "DELETE",
           headers: {

@@ -6,7 +6,7 @@ import fondoImage from "../../assets/Fondo.jpg";
 
 const loginUser = async (phone: string, password: string) => {
   try {
-    const response = await fetch('http://localhost:4000/api/login', {
+    const response = await fetch('https://api-celeste.onrender.com/api/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
