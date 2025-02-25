@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useNavigate } from "react-router-dom";
 import {
   faHome,
   faDollarSign,
   faGavel,
   faDoorOpen,
   faSignOutAlt,
-  faPen,
+  faUser,
   faBell,
 } from "@fortawesome/free-solid-svg-icons";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 interface Notification {
   _id: string;
@@ -22,25 +24,32 @@ interface Notification {
 
 const User: React.FC = () => {
   const navigate = useNavigate();
-  const [userImage, setUserImage] = useState<string | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showUserMenu, setShowUserMenu] = useState(false); // Estado para mostrar/ocultar el menú de usuario
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false); // Estado para mostrar/ocultar el modal de cambio de contraseña
+  const [newPassword, setNewPassword] = useState(""); // Estado para la nueva contraseña
+  const [confirmPassword, setConfirmPassword] = useState(""); // Estado para confirmar la nueva contraseña
+  const token = localStorage.getItem("token"); // Obtener el token del localStorage
 
-  // Obtener el nombre y el departamento del usuario desde el localStorage
   const userName = localStorage.getItem("userName") || "Usuario";
   const userDepartment = localStorage.getItem("userDepartment") || "Departamento";
 
-  // Función para obtener notificaciones desde el backend
-  const fetchNotifications = async () => {
+  // Obtener notificaciones
+  const fetchNotifications = useCallback(async () => {
     try {
       const department = localStorage.getItem("userDepartment");
-
-      if (!department) {
-        throw new Error("No se encontró el departamento");
+      if (!department || !token) {
+        throw new Error("Faltan datos necesarios (departamento o token)");
       }
 
       const response = await fetch(
-        `https://api-celeste.onrender.com/api/notificaciones?department=${department}`
+        `https://api-celeste.onrender.com/api/notificaciones?department=${department}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Incluir el token en el encabezado
+          },
+        }
       );
 
       if (!response.ok) {
@@ -51,33 +60,26 @@ const User: React.FC = () => {
       setNotifications(data);
     } catch (error) {
       console.error("Error al obtener las notificaciones:", error);
+      toast.error("Error al obtener las notificaciones.");
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 1000); // Consultar cada 10 segundos
-    return () => clearInterval(interval); // Limpiar el intervalo al desmontar
-  }, []);
+    const interval = setInterval(fetchNotifications, 10000); // Actualizar notificaciones cada 10 segundos
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
 
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setUserImage(e.target?.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Función para eliminar una notificación
+  // Eliminar notificación
   const handleDeleteNotification = async (notificationId: string) => {
     try {
       const response = await fetch(
         `https://api-celeste.onrender.com/api/notificaciones/${notificationId}`,
         {
           method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`, // Incluir el token en el encabezado
+          },
         }
       );
 
@@ -85,12 +87,65 @@ const User: React.FC = () => {
         throw new Error("Error al eliminar la notificación");
       }
 
-      // Eliminar la notificación del estado local
       setNotifications((prevNotifications) =>
         prevNotifications.filter((notif) => notif._id !== notificationId)
       );
+      toast.success("Notificación eliminada exitosamente.");
     } catch (error) {
       console.error("Error al eliminar la notificación:", error);
+      toast.error("Error al eliminar la notificación.");
+    }
+  };
+
+  // Cambiar contraseña
+  const handleChangePassword = async () => {
+    try {
+      // Validar que las contraseñas coincidan
+      if (newPassword !== confirmPassword) {
+        toast.error("Las contraseñas no coinciden.");
+        return;
+      }
+
+      // Preguntar al usuario si está seguro de cambiar la contraseña
+      const isConfirmed = window.confirm("¿Estás seguro de cambiar la contraseña?");
+      if (!isConfirmed) {
+        return;
+      }
+
+      // Enviar la solicitud para cambiar la contraseña
+      const response = await fetch("https://api-celeste.onrender.com/api/cambiar-contrasena", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ newPassword }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al cambiar la contraseña");
+      }
+
+      // Mostrar alerta de "Cerrando sesión en todos los dispositivos"
+      window.alert("Cerrando sesión en todos los dispositivos...");
+
+      // Eliminar el token permanente de la base de datos
+      await fetch("https://api-celeste.onrender.com/api/eliminar-token-permanente", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      // Redirigir al login después de 3 segundos
+      setTimeout(() => {
+        localStorage.clear(); // Limpiar el localStorage
+        navigate("/");
+      }, 3000);
+    } catch (error) {
+      console.error("Error al cambiar la contraseña:", error);
+      toast.error("Error al cambiar la contraseña.");
     }
   };
 
@@ -99,7 +154,6 @@ const User: React.FC = () => {
       {/* Sidebar */}
       <div className="bg-[#2F68A1] text-white w-64 flex flex-col justify-between">
         <div>
-          {/* Navigation */}
           <nav className="mt-10 space-y-4">
             <button
               onClick={() => navigate("/user")}
@@ -132,7 +186,6 @@ const User: React.FC = () => {
           </nav>
         </div>
 
-        {/* Logout */}
         <button
           onClick={() => navigate("/")}
           className="flex items-center px-6 py-3 hover:bg-blue-600 w-full text-left mb-8"
@@ -144,7 +197,7 @@ const User: React.FC = () => {
 
       {/* Main Content */}
       <div className="flex-1 bg-gray-300 relative p-28">
-        {/* Notifications Icon */}
+        {/* Notificaciones */}
         <div className="absolute top-4 right-4 flex items-center space-x-4">
           <div className="relative">
             <button
@@ -189,8 +242,6 @@ const User: React.FC = () => {
                             {new Date(notif.fecha).toLocaleDateString()}
                           </p>
                         </div>
-
-                        {/* Eliminar Notificación */}
                         <button
                           className="text-red-600 hover:text-red-800 font-semibold"
                           onClick={() => handleDeleteNotification(notif._id)}
@@ -205,32 +256,73 @@ const User: React.FC = () => {
             )}
           </div>
 
-          {/* User Image */}
-          <div className="relative w-16 h-16">
-            <div className="w-16 h-16 bg-gray-500 rounded-full overflow-hidden border-2 border-white shadow-lg">
-              <img
-                src={userImage || "https://via.placeholder.com/150"}
-                alt="User"
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <label
-              htmlFor="fileInput"
-              className="absolute bottom-0 right-0 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-md cursor-pointer"
+          {/* Menú de usuario */}
+          <div className="relative">
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center text-gray-700 hover:text-gray-900 focus:outline-none"
             >
-              <FontAwesomeIcon icon={faPen} className="text-black w-3 h-3" />
-            </label>
-            <input
-              id="fileInput"
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleImageChange}
-            />
+              <FontAwesomeIcon icon={faUser} className="text-2xl" />
+            </button>
+
+            {showUserMenu && (
+              <div className="absolute right-0 mt-2 w-64 bg-white shadow-md rounded-lg p-4 z-10">
+                <h2 className="text-lg font-bold mb-2">Datos del usuario</h2>
+                <p className="text-sm">
+                  <strong>Nombre:</strong> {userName}
+                </p>
+                <p className="text-sm">
+                  <strong>Departamento:</strong> {userDepartment}
+                </p>
+                <button
+                  onClick={() => setShowChangePasswordModal(true)}
+                  className="mt-4 w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+                >
+                  Cambiar contraseña
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Mensaje de bienvenida personalizado */}
+        {/* Modal para cambiar contraseña */}
+        {showChangePasswordModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20">
+            <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+              <h2 className="text-xl font-bold mb-4">Cambiar contraseña</h2>
+              <input
+                type="password"
+                placeholder="Nueva contraseña"
+                className="w-full px-4 py-2 border rounded-lg mb-4"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+              <input
+                type="password"
+                placeholder="Confirmar nueva contraseña"
+                className="w-full px-4 py-2 border rounded-lg mb-4"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+              <div className="flex justify-end space-x-4">
+                <button
+                  onClick={() => setShowChangePasswordModal(false)}
+                  className="bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleChangePassword}
+                  className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700"
+                >
+                  Confirmar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Mensaje de bienvenida */}
         <h1 className="text-center text-2xl font-bold mb-12">
           ¡Bienvenid@, {userName} (Departamento {userDepartment})!
         </h1>

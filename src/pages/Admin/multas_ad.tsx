@@ -105,8 +105,8 @@ const Multas: React.FC = () => {
         toast.error("Departamento no encontrado.");
       }
     } catch (error) {
-      console.error("Error al obtener los datos del departamento:", error);
-      toast.error("Error al obtener los datos del departamento.");
+      console.error("Departamento no encontrado:", error);
+      toast.error("Departamento no encontrado");
     }
   };
 

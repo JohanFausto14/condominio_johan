@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHome, faDollarSign, faGavel, faDoorOpen, faSignOutAlt, faSearch, faBell } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 interface Notification {
   _id: string;
@@ -16,6 +18,7 @@ const PermisosPortones: React.FC = () => {
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const token = localStorage.getItem("token"); // Obtener el token del localStorage
 
   const permissions = [
     { id: 1, name: "Ari Johan Alvarado Fausto", role: "Administrador", tower: "Del Rey", department: 506, permission: "Autorizado" },
@@ -28,15 +31,20 @@ const PermisosPortones: React.FC = () => {
   ];
 
   // Obtener notificaciones
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       const department = localStorage.getItem("userDepartment");
-      if (!department) {
-        throw new Error("No se encontró el departamento");
+      if (!department || !token) {
+        throw new Error("Faltan datos necesarios (departamento o token)");
       }
 
       const response = await fetch(
-        `https://api-celeste.onrender.com/api/notificaciones?department=${department}`
+        `https://api-celeste.onrender.com/api/notificaciones?department=${department}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // Incluir el token en el encabezado
+          },
+        }
       );
 
       if (!response.ok) {
@@ -47,21 +55,27 @@ const PermisosPortones: React.FC = () => {
       setNotifications(data);
     } catch (error) {
       console.error("Error al obtener las notificaciones:", error);
+      toast.error("Error al obtener las notificaciones.");
     }
-  };
+  }, [token]); // Dependencias de fetchNotifications
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 10000); // Actualizar cada 10 segundos
+    const interval = setInterval(fetchNotifications, 10000); // Actualizar notificaciones cada 10 segundos
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchNotifications]); // Dependencia: fetchNotifications
 
   // Eliminar notificación
   const handleDeleteNotification = async (notificationId: string) => {
     try {
       const response = await fetch(
         `https://api-celeste.onrender.com/api/notificaciones/${notificationId}`,
-        { method: "DELETE" }
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`, // Incluir el token en el encabezado
+          },
+        }
       );
 
       if (!response.ok) {
@@ -71,8 +85,10 @@ const PermisosPortones: React.FC = () => {
       setNotifications((prevNotifications) =>
         prevNotifications.filter((notif) => notif._id !== notificationId)
       );
+      toast.success("Notificación eliminada exitosamente.");
     } catch (error) {
       console.error("Error al eliminar la notificación:", error);
+      toast.error("Error al eliminar la notificación.");
     }
   };
 
