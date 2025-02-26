@@ -4,6 +4,7 @@ import { faHome, faDollarSign, faGavel, faDoorOpen, faSignOutAlt, faSearch, faBe
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Sesion from "../../components/sesion";
 
 interface Notification {
   _id: string;
@@ -94,6 +95,7 @@ const PermisosPortones: React.FC = () => {
 
   return (
     <div className="flex h-screen">
+            <Sesion />
       {/* Sidebar */}
       <div className="bg-[#2F68A1] text-white w-64 flex flex-col justify-between">
         <div>

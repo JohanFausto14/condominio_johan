@@ -13,6 +13,8 @@ import {
   faTrash,
   faFileAlt, // Historial de pagos
 } from "@fortawesome/free-solid-svg-icons";
+import Sesion from "../../components/sesion";
+
 
 const Pagos: React.FC = () => {
   const navigate = useNavigate();
@@ -46,6 +48,7 @@ const Pagos: React.FC = () => {
 
   return (
     <div className="flex h-screen">
+            <Sesion />
       {/* Sidebar */}
       <div className="bg-[#2F68A1] text-white w-64 flex flex-col justify-between">
         <div>

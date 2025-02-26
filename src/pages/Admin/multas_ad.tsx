@@ -17,6 +17,8 @@ import {
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Modal from "../../components/modal";
+import Sesion from "../../components/sesion";
+
 
 interface Fine {
   id: number;
@@ -237,7 +239,7 @@ const Multas: React.FC = () => {
         draggable
         pauseOnHover
       />
-
+      <Sesion />
       {/* Sidebar */}
       <div className="bg-[#2F68A1] text-white w-64 flex flex-col justify-between">
         <div>

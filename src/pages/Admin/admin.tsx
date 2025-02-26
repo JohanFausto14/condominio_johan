@@ -10,6 +10,7 @@ import {
   faSignOutAlt,
   faPen,
 } from "@fortawesome/free-solid-svg-icons";
+import Sesion from "../../components/sesion";
 
 const Admin: React.FC = () => {
   const navigate = useNavigate();
@@ -28,6 +29,8 @@ const Admin: React.FC = () => {
 
   return (
     <div className="flex h-screen">
+            <Sesion />
+
       {/* Sidebar */}
       <div className="bg-[#2F68A1] text-white w-64 flex flex-col justify-between">
         <div>

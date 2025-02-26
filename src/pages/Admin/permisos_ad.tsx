@@ -2,6 +2,8 @@ import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHome, faUser, faDollarSign, faGavel, faDoorOpen, faSignOutAlt, faSearch, faPen, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
+import Sesion from "../../components/sesion";
+
 
 const PermisosPortones: React.FC = () => {
   const navigate = useNavigate();
@@ -18,6 +20,7 @@ const PermisosPortones: React.FC = () => {
 
   return (
     <div className="flex h-screen">
+            <Sesion />
       {/* Sidebar */}
       <div className="bg-[#2F68A1] text-white w-64 flex flex-col justify-between">
         <div>
