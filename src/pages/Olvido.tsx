@@ -4,33 +4,9 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import fondoImage from "../../assets/Fondo.jpg";
 
-// Función para realizar el login
-const loginUser = async (phone: string, password: string, rememberMe: boolean) => {
-  try {
-    const response = await fetch('https://api-celeste.onrender.com/api/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ phone, password, rememberMe }), // Enviar rememberMe al backend
-    });
-
-    if (!response.ok) {
-      throw new Error("Error al verificar el teléfono y la contraseña.");
-    }
-
-    const data = await response.json();
-    return data; // Retornar todos los datos, incluyendo el token y el token permanente
-  } catch (error) {
-    throw new Error(error instanceof Error ? error.message : "Error desconocido");
-  }
-};
-
-const Login: React.FC = () => {
+const Olvido: React.FC = () => {
   const navigate = useNavigate();
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false); // Estado para el checkbox "Recordar contraseña"
 
   // Función para manejar cambios en el campo de teléfono
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,26 +37,29 @@ const Login: React.FC = () => {
     }
 
     try {
-      // Llamar a la función loginUser que verifica el número y la contraseña en el backend
-      const { token, permanentToken, userData } = await loginUser(phoneNumber, password, rememberMe);
+      // Agregar el código de país +52 al número de teléfono
+      const fullPhoneNumber = `+52${phoneNumber}`;
 
-      console.log("Datos recibidos de la API:", userData);
+      // Enviar el número de teléfono al backend para enviar el WhatsApp
+      const response = await fetch('http://localhost:4000/api/send-whatsapp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem("token")}`, // Agrega el token si es necesario
+        },
+        body: JSON.stringify({ phoneNumber: fullPhoneNumber }),
+      });
 
-      // Guardar los datos del usuario y el token en localStorage
-      localStorage.setItem("userName", userData.name);
-      localStorage.setItem("userProfile", userData.role);
-      localStorage.setItem("userDepartment", userData.department);
-      localStorage.setItem("token", token); // Guardar el token temporal en localStorage
-
-      // Si el usuario seleccionó "Recordar contraseña", guardar el token permanente
-      if (rememberMe && permanentToken) {
-        localStorage.setItem("permanentToken", permanentToken);
+      // Verificar si la respuesta es exitosa
+      if (!response.ok) {
+        const errorData = await response.json(); // Obtener detalles del error
+        throw new Error(errorData.message || "Error al enviar el mensaje de WhatsApp.");
       }
 
-      // Alerta de éxito: el usuario se autenticó correctamente
-      toast.success("Autenticación exitosa. Redirigiendo...", {
+      // Mostrar mensaje de éxito
+      toast.success("Se ha enviado un enlace de recuperación a tu teléfono.", {
         position: "top-center",
-        autoClose: 2000,
+        autoClose: 3000,
         hideProgressBar: true,
         closeOnClick: true,
         pauseOnHover: true,
@@ -88,16 +67,20 @@ const Login: React.FC = () => {
         progress: undefined,
       });
 
-      // Redirigir al dashboard según el perfil
+      // Redirigir al usuario después de 3 segundos
       setTimeout(() => {
-        if (userData.role === "Administrador") {
-          navigate("/admin");
-        } else {
-          navigate("/user");
-        }
-      }, 2000);
+        navigate("/"); // Redirigir al login
+      }, 3000);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Error al iniciar sesión", {
+      let errorMessage = "Error al procesar la solicitud. Inténtalo de nuevo.";
+
+      // Verificar si el error es una instancia de Error
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      // Mostrar el mensaje de error
+      toast.error(errorMessage, {
         position: "top-center",
         autoClose: 3000,
         hideProgressBar: true,
@@ -109,24 +92,19 @@ const Login: React.FC = () => {
     }
   };
 
-  // Función para redirigir a la página de recuperación de contraseña
-  const handleForgotPassword = () => {
-    navigate("/Olvido");
-  };
-
   return (
     <div
       className="flex justify-center items-center h-screen bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: `url(${fondoImage})` }}
     >
       <div
-        className="p-8 rounded-lg shadow-lg w-[450px] min-h-[500px] flex flex-col justify-center"
+        className="p-8 rounded-lg shadow-lg w-[450px] min-h-[400px] flex flex-col justify-center"
         style={{
           background: "linear-gradient(to bottom, rgba(255, 255, 255, 0.8), rgba(0, 51, 102, 0.8))",
           boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
         }}
       >
-        <h2 className="text-5xl font-semibold text-center mb-6 text-black">Inicio de sesión</h2>
+        <h2 className="text-5xl font-semibold text-center mb-6 text-black">Recuperar contraseña</h2>
         <div className="flex justify-center mb-8">
           <div className="w-20 h-20 bg-black rounded-full flex items-center justify-center shadow-md">
             <svg
@@ -149,56 +127,30 @@ const Login: React.FC = () => {
               id="phone"
               placeholder="Ingresa tu número de teléfono"
               className="w-full px-4 py-2 border rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-              onChange={handlePhoneChange} // Usar la función personalizada
+              onChange={handlePhoneChange}
               value={phoneNumber}
-              maxLength={10} // Limitar a 10 caracteres
+              maxLength={10}
               required
             />
-          </div>
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-white mb-1">
-              Contraseña
-            </label>
-            <input
-              type="password"
-              id="password"
-              placeholder="Ingresa tu contraseña"
-              className="w-full px-4 py-2 border rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-              onChange={(e) => setPassword(e.target.value)}
-              value={password}
-              required
-            />
-          </div>
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="rememberMe"
-              className="mr-2"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-            />
-            <label htmlFor="rememberMe" className="text-sm text-white">
-              Recordar contraseña
-            </label>
           </div>
           <p className="text-sm text-white">
-            Ingresa tu número de teléfono y contraseña para iniciar sesión.
+            Ingresa tu número de teléfono para recibir un enlace de recuperación.
           </p>
           <div className="flex justify-center">
             <button
               type="submit"
               className="bg-white hover:bg-blue-600 text-black hover:text-white py-2 px-8 rounded-3xl font-medium shadow-md transition-all"
             >
-              Continuar
+              Enviar
             </button>
           </div>
           <div className="text-center">
             <button
               type="button"
-              onClick={handleForgotPassword}
+              onClick={() => navigate("/login")}
               className="text-sm text-white hover:text-blue-400 underline"
             >
-              ¿Olvidaste tu contraseña?
+              Volver al inicio de sesión
             </button>
           </div>
         </form>
@@ -210,4 +162,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login;
+export default Olvido;

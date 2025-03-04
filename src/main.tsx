@@ -11,6 +11,9 @@ import Permisos from "./pages/user/permisos";
 import MultasAd from "./pages/Admin/multas_ad";
 import PermisosAd from "./pages/Admin/permisos_ad";
 import PagosAd from "./pages/Admin/pagos_ad";
+import Olvido from "./pages/Olvido"; // Importa el componente Olvido
+import NuevaContraseña from "./pages/NuevaContraseña"; // Importa el componente NuevaContraseña
+
 
 import "./index.css"; // Mantén el estilo global
 
@@ -31,6 +34,9 @@ if (rootElement) {
           <Route path="/admin/multas_ad" element={<MultasAd />} />
           <Route path="/admin/permisos_ad" element={<PermisosAd />} />
           <Route path="/admin/pagos_ad" element={<PagosAd />} />
+          <Route path="/Olvido" element={<Olvido />} /> {/* Ruta para Olvido */}
+          <Route path="/restablecer/:token" element={<NuevaContraseña />} /> {/* Ruta para NuevaContraseña */}
+
         </Routes>
       </BrowserRouter>
     </React.StrictMode>
