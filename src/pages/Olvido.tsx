@@ -41,7 +41,7 @@ const Olvido: React.FC = () => {
       const fullPhoneNumber = `+52${phoneNumber}`;
 
       // Enviar el número de teléfono al backend para enviar el WhatsApp
-      const response = await fetch('http://localhost:4000/api/send-whatsapp', {
+      const response = await fetch('https://api-celeste.onrender.com/api/send-whatsapp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

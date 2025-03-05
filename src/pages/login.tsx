@@ -28,7 +28,7 @@ const loginUser = async (phone: string, password: string, rememberMe: boolean) =
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("52"); // Inicializar con el prefijo "52"
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false); // Estado para el checkbox "Recordar contraseña"
 
@@ -36,8 +36,8 @@ const Login: React.FC = () => {
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
 
-    // Validar que solo se ingresen números y limitar a 10 dígitos
-    if (/^\d*$/.test(inputValue) && inputValue.length <= 10) {
+    // Validar que solo se ingresen números y que el prefijo "52" no sea eliminado
+    if (/^\d*$/.test(inputValue) && inputValue.startsWith("52")) {
       setPhoneNumber(inputValue);
     }
   };
@@ -45,20 +45,6 @@ const Login: React.FC = () => {
   // Función para manejar el envío del formulario
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validar que el número de teléfono tenga exactamente 10 dígitos
-    if (phoneNumber.length !== 10) {
-      toast.error("El número de teléfono debe tener exactamente 10 dígitos.", {
-        position: "top-center",
-        autoClose: 3000,
-        hideProgressBar: true,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-      });
-      return;
-    }
 
     try {
       // Llamar a la función loginUser que verifica el número y la contraseña en el backend
@@ -147,11 +133,10 @@ const Login: React.FC = () => {
             <input
               type="tel"
               id="phone"
-              placeholder="Ingresa tu número de teléfono"
+              placeholder="52"
               className="w-full px-4 py-2 border rounded-full shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
               onChange={handlePhoneChange} // Usar la función personalizada
               value={phoneNumber}
-              maxLength={10} // Limitar a 10 caracteres
               required
             />
           </div>
