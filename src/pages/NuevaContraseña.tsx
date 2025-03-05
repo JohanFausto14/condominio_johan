@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import fondoImage from "../../assets/Fondo.jpg"; // Importa la imagen de fondo
 
 const NuevaContraseña: React.FC = () => {
   const { token } = useParams(); // Extraer el token de la URL
+  const navigate = useNavigate(); // Hook para redirigir
   const [isValidToken, setIsValidToken] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState("");
@@ -91,6 +93,11 @@ const NuevaContraseña: React.FC = () => {
     try {
       await updatePassword(token || "", newPassword);
       toast.success("Contraseña actualizada correctamente.");
+
+      // Redirigir al login después de 3 segundos
+      setTimeout(() => {
+        navigate("/"); // Redirigir al login
+      }, 3000);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Error al actualizar la contraseña.";
       toast.error(errorMessage);
@@ -104,16 +111,25 @@ const NuevaContraseña: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center mb-6">Restablecer Contraseña</h1>
+    <div
+      className="flex justify-center items-center h-screen bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: `url(${fondoImage})` }} // Aplica la imagen de fondo
+    >
+      <div
+        className="p-8 rounded-lg shadow-lg w-[450px] min-h-[400px] flex flex-col justify-center"
+        style={{
+          background: "linear-gradient(to bottom, rgba(255, 255, 255, 0.8), rgba(0, 51, 102, 0.8))",
+          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+        }}
+      >
+        <h1 className="text-5xl font-semibold text-center mb-6 text-black">Restablecer Contraseña</h1>
         <ToastContainer /> {/* Contenedor para las notificaciones */}
         {isLoading ? (
           <p className="text-center">Cargando...</p>
         ) : isValidToken ? (
           <form onSubmit={handleChangePassword} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Nueva Contraseña</label>
+              <label className="block text-sm font-medium text-white mb-1">Nueva Contraseña</label>
               <input
                 type="password"
                 value={newPassword}
@@ -123,7 +139,7 @@ const NuevaContraseña: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Confirmar Contraseña</label>
+              <label className="block text-sm font-medium text-white mb-1">Confirmar Contraseña</label>
               <input
                 type="password"
                 value={confirmPassword}
@@ -134,7 +150,7 @@ const NuevaContraseña: React.FC = () => {
             </div>
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-white hover:bg-blue-600 text-black hover:text-white py-2 px-4 rounded-md font-medium shadow-md transition-all"
             >
               Cambiar Contraseña
             </button>
