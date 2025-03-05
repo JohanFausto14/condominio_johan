@@ -38,7 +38,7 @@ const Olvido: React.FC = () => {
 
     try {
       // Agregar el código de país +52 al número de teléfono
-      const fullPhoneNumber = `+52${phoneNumber}`;
+      const fullPhoneNumber = `52${phoneNumber}`;
 
       // Enviar el número de teléfono al backend para enviar el WhatsApp
       const response = await fetch('https://api-celeste.onrender.com/api/send-whatsapp', {
