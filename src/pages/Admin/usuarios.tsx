@@ -30,7 +30,7 @@ interface User {
 
 const Usuarios: React.FC = () => {
   const navigate = useNavigate();
-  const [users, setUsers] = useState<User[]>([]); // Lista de usuarios obtenida del backend
+  const [users, setUsers] = useState<User[]>([]); // Lista obtenida del backend
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newUser, setNewUser] = useState<User>({
